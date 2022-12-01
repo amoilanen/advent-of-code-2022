@@ -3,25 +3,15 @@ package aoc2022.solutions
 import scala.annotation.tailrec
 import scala.util.Try
 
+import aoc2022.solutions.common.ParsingUtils._
+
 object Day1:
 
   case class ElfItems(items: Seq[Int])
 
-  case class SplittingState[T](readyParts: Seq[Seq[T]] = Seq(), currentPart: Seq[T] = Seq())
-
-  def splitBy[T](elements: Seq[T], delimeter: T): Seq[Seq[T]] =
-    val finalSplittingState = elements.foldLeft(SplittingState[T]()) {
-      case (SplittingState(readyParts, currentPart), element) =>
-        if (element == delimeter)
-          SplittingState(readyParts :+ currentPart, Seq())
-        else
-          SplittingState(readyParts, currentPart :+ element)
-    }
-    finalSplittingState.readyParts :+ finalSplittingState.currentPart
-
   def parse(input: String): Seq[ElfItems] =
     val lines = input.split("\n").map(_.trim)
-    val itemsGroupedByElf = splitBy(lines, "").filter(!_.isEmpty).map(_.map(_.toInt))
+    val itemsGroupedByElf = splitBy("")(lines).filter(!_.isEmpty).map(_.map(_.toInt))
     itemsGroupedByElf.map(ElfItems(_))
 
   def elvesCaloriesSortedByHighest(elves: Seq[ElfItems]): Seq[Int] =
