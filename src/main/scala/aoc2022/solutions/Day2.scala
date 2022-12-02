@@ -36,6 +36,14 @@ object Day2:
         case Draw => 3
         case Won => 6
       }
+  object Outcome:
+    def fromCode(code: String): Option[Outcome] =
+      code match {
+        case "X" => Some(Lost)
+        case "Y" => Some(Draw)
+        case "Z" => Some(Won)
+        case _ => None
+      }
 
   case class Round(first: Shape, second: Shape)
 
@@ -58,17 +66,47 @@ object Day2:
     round.second.score + outcome.score
 
   def roundsForPart1(pairsOfCodes: Seq[(String, String)]): Seq[Round] =
-    pairsOfCodes.map({ case (firstShape, secondShape) =>
-      for
-        first <- Shape.fromCode(firstShape)
-        second <- Shape.fromCode(secondShape)
+    pairsOfCodes.map({ case (first, second) =>
+      val round = for
+        firstShape <- Shape.fromCode(first)
+        secondShape <- Shape.fromCode(second)
       yield
-        Round(first, second)
+        Round(firstShape, secondShape)
+      if (round.isEmpty)
+        println(s"'$first $second' - could not determine the round it encodes")
+      round
     }).flatten
 
-  def solutionPart1(pairsOfCodes: Seq[(String, String)]): Int =
-    val rounds = roundsForPart1(pairsOfCodes)
+  def solution(roundDeterminator: Seq[(String, String)] => Seq[Round])(pairsOfCodes: Seq[(String, String)]): Int =
+    val rounds = roundDeterminator(pairsOfCodes)
     rounds.map(computeScore(_)).sum
+
+  val solutionPart1: Seq[(String, String)] => Int =
+    solution(roundsForPart1)
+
+  def determineShapeByOutcome(first: Shape, desiredOutcome: Outcome): Option[Shape] =
+    if (desiredOutcome == Outcome.Draw)
+      Some(first)
+    else if (desiredOutcome == Outcome.Won)
+      Shape.values.find(_.winsOver(first))
+    else
+      Shape.values.find(first.winsOver(_))
+
+  def roundsForPart2(pairsOfCodes: Seq[(String, String)]): Seq[Round] =
+    pairsOfCodes.map({ case (first, second) =>
+      val round = for
+        firstShape <- Shape.fromCode(first)
+        desiredOutcome <- Outcome.fromCode(second)
+        secondShape <- determineShapeByOutcome(firstShape, desiredOutcome)
+      yield
+        Round(firstShape, secondShape)
+      if (round.isEmpty)
+        println(s"'$first $second' - could not determine the round it encodes")
+      round
+    }).flatten
+
+  val solutionPart2: Seq[(String, String)] => Int =
+    solution(roundsForPart2)
 
 @main
 def day2Main: Unit =
@@ -76,3 +114,4 @@ def day2Main: Unit =
   import Day2Input._
   val parsed = parse(input)
   println(solutionPart1(parsed))
+  println(solutionPart2(parsed))
