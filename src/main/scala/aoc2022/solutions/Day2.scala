@@ -39,15 +39,11 @@ object Day2:
 
   case class Round(first: Shape, second: Shape)
 
-  def parse(input: String): Seq[Round] =
+  def parse(input: String): Seq[(String, String)] =
     input.split("\n").filter(_.nonEmpty).map(part =>
-      val Array(firstShape: String, secondShape: String) = part.split(" ")
-      for
-        first <- Shape.fromCode(firstShape)
-        second <- Shape.fromCode(secondShape)
-      yield
-        Round(first, second)
-    ).toSeq.flatten
+      val Array(first: String, second: String) = part.split(" ")
+      (first, second)
+    ).toSeq
 
   def computeOutcome(round: Round): Outcome =
     if (round.first == round.second)
@@ -61,7 +57,17 @@ object Day2:
     val outcome = computeOutcome(round)
     round.second.score + outcome.score
 
-  def solutionPart1(rounds: Seq[Round]): Int =
+  def roundsForPart1(pairsOfCodes: Seq[(String, String)]): Seq[Round] =
+    pairsOfCodes.map({ case (firstShape, secondShape) =>
+      for
+        first <- Shape.fromCode(firstShape)
+        second <- Shape.fromCode(secondShape)
+      yield
+        Round(first, second)
+    }).flatten
+
+  def solutionPart1(pairsOfCodes: Seq[(String, String)]): Int =
+    val rounds = roundsForPart1(pairsOfCodes)
     rounds.map(computeScore(_)).sum
 
 @main
@@ -69,5 +75,4 @@ def day2Main: Unit =
   import Day2._
   import Day2Input._
   val parsed = parse(input)
-  println(parsed)
   println(solutionPart1(parsed))
