@@ -10,9 +10,8 @@ object Day3:
   def parse(input: String): Seq[Rucksack] =
     input.split("\n").filter(_.nonEmpty).map(Rucksack(_))
 
-  def itemAppearingInBothCompartments(rucksack: Rucksack): Char =
-    val wronglyPackedItem = rucksack.firstCompartment.find(rucksack.secondCompartment.contains(_)).get
-    wronglyPackedItem
+  def groupsOfRucksacks(rucksacks: Seq[Rucksack]): Seq[Seq[Rucksack]] =
+    rucksacks.grouped(3).toSeq
 
   def scoreItem(item: Char): Int =
     if (item.isLower)
@@ -20,8 +19,23 @@ object Day3:
     else
       item.toInt - 'A'.toInt + 27
 
+  def commonItem(itemCollections: Seq[String]): Char =
+    val itemSets = itemCollections.map(_.toSet)
+    val intersection = itemSets.reduce((x, y) => x.intersect(y))
+    intersection.toList.head
+
   def solutionPart1(rucksacks: Seq[Rucksack]): Int =
-    rucksacks.map(itemAppearingInBothCompartments(_)).map(scoreItem(_)).sum
+    rucksacks.map(rucksack =>
+      commonItem(Seq(
+        rucksack.firstCompartment,
+        rucksack.secondCompartment
+      )),
+    ).map(scoreItem(_)).sum
+
+  def solutionPart2(rucksacks: Seq[Rucksack]): Int =
+    groupsOfRucksacks(rucksacks).map(rucksackGroup =>
+      commonItem(rucksackGroup.map(_.contents))
+    ).map(scoreItem(_)).sum
 
 @main
 def day3Main: Unit =
@@ -29,3 +43,4 @@ def day3Main: Unit =
   import Day3Input._
   val parsed = parse(input)
   println(solutionPart1(parsed))
+  println(solutionPart2(parsed))

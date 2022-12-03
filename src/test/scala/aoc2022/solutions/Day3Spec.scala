@@ -4,6 +4,9 @@ import aoc2022.solutions.Day3._
 
 class Day3Spec extends munit.FunSuite:
 
+  def itemAppearingInBothCompartments(rucksack: Rucksack): Char =
+    commonItem(Seq(rucksack.firstCompartment, rucksack.secondCompartment))
+
   test("itemAppearingInBothCompartments") {
     assertEquals(itemAppearingInBothCompartments(Rucksack("vJrwpWtwJgWrhcsFMMfFFhFp")), 'p')
     assertEquals(itemAppearingInBothCompartments(Rucksack("jqHRNqRjqzjGDLGLrsFMfFZSrLrFZsSL")), 'L')
