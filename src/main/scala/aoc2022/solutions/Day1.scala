@@ -1,6 +1,5 @@
 package aoc2022.solutions
 
-import scala.annotation.tailrec
 import scala.util.Try
 
 import aoc2022.solutions.common.ParsingUtils._

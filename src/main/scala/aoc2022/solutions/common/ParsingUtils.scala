@@ -2,6 +2,9 @@ package aoc2022.solutions.common
 
 object ParsingUtils:
 
+  case class ParsingError(message: String, cause: Option[Throwable] = None)
+    extends RuntimeException(message, cause.getOrElse(null))
+
   case class SplittingState[T](readyParts: Seq[Seq[T]] = Seq(), currentPart: Seq[T] = Seq())
 
   def splitBy[T](delimeter: T)(elements: Seq[T]): Seq[Seq[T]] =
