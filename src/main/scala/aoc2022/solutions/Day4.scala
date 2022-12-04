@@ -4,7 +4,21 @@ import aoc2022.solutions.common.ParsingUtils.{ParsingError, splitBy}
 
 object Day4:
 
-  case class Section(start: Int, end: Int)
+  case class Section(start: Int, end: Int):
+    def intersect(other: Section): Option[Section] =
+      val newStart = Math.max(start, other.start)
+      val newEnd = Math.min(end, other.end)
+      if (newStart <= newEnd)
+        Some(Section(newStart, newEnd))
+      else
+        None
+    def contains(other: Section): Boolean =
+      this.intersect(other) == Some(other)
+  object Section:
+    def oneFullyContainsAnother(first: Section, second: Section): Boolean =
+      val intersection = first.intersect(second)
+      intersection == Some(first) || intersection == Some(second)
+
   case class ElfPair(first: Section, second: Section)
 
   def parseSection(input: String): Section =
@@ -29,14 +43,16 @@ object Day4:
     val lines = input.split("\n").map(_.trim).filter(_.nonEmpty)
     lines.map(parseElfPair(_))
 
-  def solutionPart1(elves: Seq[ElfPair]): Int =
-    ???
+  def solutionPart1(pairs: Seq[ElfPair]): Int =
+    pairs.filter(pair =>
+      Section.oneFullyContainsAnother(pair.first, pair.second)
+    ).size
 
-  def solutionPart2(elves: Seq[ElfPair]): Int =
+  def solutionPart2(pairs: Seq[ElfPair]): Int =
     ???
 
 @main def day4Solution: Unit =
   import Day4._
   import Day4Input._
   val parsed = parse(input)
-  println(parsed)
+  println(solutionPart1(parsed))
