@@ -49,10 +49,13 @@ object Day4:
     ).size
 
   def solutionPart2(pairs: Seq[ElfPair]): Int =
-    ???
+    pairs.filter(pair =>
+      !pair.first.intersect(pair.second).isEmpty
+    ).size
 
 @main def day4Solution: Unit =
   import Day4._
   import Day4Input._
   val parsed = parse(input)
   println(solutionPart1(parsed))
+  println(solutionPart2(parsed))
