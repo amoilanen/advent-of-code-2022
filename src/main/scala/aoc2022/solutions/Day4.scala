@@ -14,6 +14,7 @@ object Day4:
         None
     def contains(other: Section): Boolean =
       this.intersect(other) == Some(other)
+
   object Section:
     def oneFullyContainsAnother(first: Section, second: Section): Boolean =
       val intersection = first.intersect(second)
