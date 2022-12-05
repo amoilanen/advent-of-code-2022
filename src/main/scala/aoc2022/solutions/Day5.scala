@@ -46,9 +46,15 @@ object Day5:
     val operations = parseOperations(operationsInput)
     PuzzleInput(stacks, operations)
 
-  def applyOperation(stacksOfCrates: StacksOfCrates, operation: Operation): StacksOfCrates =
+  def cratePickingOperationPart1(stack: List[String], quantity: Int): List[String] =
+    stack.slice(0, quantity).reverse
+
+  def cratePickingOperationPart2(stack: List[String], quantity: Int): List[String] =
+    stack.slice(0, quantity)
+
+  def applyOperation(cratePickingOperation: (stack: List[String], quantity: Int) => List[String])(stacksOfCrates: StacksOfCrates, operation: Operation): StacksOfCrates =
     val Operation(quantity, from, to) = operation
-    val toAppend = stacksOfCrates.crates(from - 1).slice(0, quantity).reverse
+    val toAppend = cratePickingOperation(stacksOfCrates.crates(from - 1), quantity)
     StacksOfCrates(stacksOfCrates.crates.zipWithIndex.map({ case (stack, idx) =>
       if (idx == from - 1)
         stack.drop(quantity)
@@ -58,10 +64,17 @@ object Day5:
         stack
     }))
 
-  def solutionForPart1(puzzleInput: PuzzleInput): String =
+  def topCratesAfterOperations(puzzleInput: PuzzleInput, cratePickingOperation: (stack: List[String], quantity: Int) => List[String]): String =
     val PuzzleInput(stacks, operations) = puzzleInput
-    val stacksOfCratesAfterOperations = operations.foldLeft(stacks)((updatedStacks, op) => applyOperation(updatedStacks, op))
+    val applyOperationWithPicking = applyOperation(cratePickingOperation)
+    val stacksOfCratesAfterOperations = operations.foldLeft(stacks)((updatedStacks, op) => applyOperationWithPicking(updatedStacks, op))
     stacksOfCratesAfterOperations.crates.map(_.head).flatten.mkString
+
+  def solutionForPart1(puzzleInput: PuzzleInput): String =
+    topCratesAfterOperations(puzzleInput, cratePickingOperationPart1)
+
+  def solutionForPart2(puzzleInput: PuzzleInput): String =
+    topCratesAfterOperations(puzzleInput, cratePickingOperationPart2)
 
 @main def day5Solution: Unit =
   import Day5._
@@ -69,3 +82,4 @@ object Day5:
   val parsed = parse(input)
   println(parsed)
   println(solutionForPart1(parsed))
+  println(solutionForPart2(parsed))
