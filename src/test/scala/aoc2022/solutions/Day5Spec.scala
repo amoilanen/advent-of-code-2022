@@ -80,3 +80,76 @@ class Day5Spec extends munit.FunSuite:
         Operation(1, 1, 2)
       ))
   }
+
+  test("applyOperation: step 1") {
+    val stacks = StacksOfCrates(
+      List(
+        List("N", "Z"),
+        List("D", "C", "M"),
+        List("P")
+      )
+    )
+    val expectedStacksAfter = StacksOfCrates(
+      List(
+        List("D", "N", "Z"),
+        List("C", "M"),
+        List("P")
+      )
+    )
+    assertEquals(applyOperation(stacks, Operation(1, 2, 1)), expectedStacksAfter)
+  }
+
+  test("applyOperation: step 2") {
+    val stacks = StacksOfCrates(
+      List(
+        List("D", "N", "Z"),
+        List("C", "M"),
+        List("P")
+      )
+    )
+    val expectedStacksAfter = StacksOfCrates(
+      List(
+        List(),
+        List("C", "M"),
+        List("Z", "N", "D", "P")
+      )
+    )
+    assertEquals(applyOperation(stacks, Operation(3, 1, 3)), expectedStacksAfter)
+  }
+
+  test("applyOperation: step 3") {
+    val stacks = StacksOfCrates(
+      List(
+        List(),
+        List("C", "M"),
+        List("Z", "N", "D", "P")
+      )
+    )
+    val expectedStacksAfter = StacksOfCrates(
+      List(
+        List("M", "C"),
+        List(),
+        List("Z", "N", "D", "P")
+      )
+    )
+    assertEquals(applyOperation(stacks, Operation(2, 2, 1)), expectedStacksAfter)
+  }
+
+  test("applyOperation: step 4") {
+    val stacks = StacksOfCrates(
+      List(
+        List("M", "C"),
+        List(),
+        List("Z", "N", "D", "P")
+      )
+    )
+    val expectedStacksAfter = StacksOfCrates(
+      List(
+        List("C"),
+        List("M"),
+        List("Z", "N", "D", "P")
+      )
+    )
+    assertEquals(applyOperation(stacks, Operation(1, 1, 2)), expectedStacksAfter)
+  }
+

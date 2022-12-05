@@ -46,8 +46,26 @@ object Day5:
     val operations = parseOperations(operationsInput)
     PuzzleInput(stacks, operations)
 
+  def applyOperation(stacksOfCrates: StacksOfCrates, operation: Operation): StacksOfCrates =
+    val Operation(quantity, from, to) = operation
+    val toAppend = stacksOfCrates.crates(from - 1).slice(0, quantity).reverse
+    StacksOfCrates(stacksOfCrates.crates.zipWithIndex.map({ case (stack, idx) =>
+      if (idx == from - 1)
+        stack.drop(quantity)
+      else if (idx == to - 1)
+         toAppend ++ stack
+      else
+        stack
+    }))
+
+  def solutionForPart1(puzzleInput: PuzzleInput): String =
+    val PuzzleInput(stacks, operations) = puzzleInput
+    val stacksOfCratesAfterOperations = operations.foldLeft(stacks)((updatedStacks, op) => applyOperation(updatedStacks, op))
+    stacksOfCratesAfterOperations.crates.map(_.head).flatten.mkString
+
 @main def day5Solution: Unit =
   import Day5._
   import Day5Input._
   val parsed = parse(input)
   println(parsed)
+  println(solutionForPart1(parsed))
