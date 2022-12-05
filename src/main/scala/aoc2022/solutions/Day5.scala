@@ -70,10 +70,10 @@ object Day5:
     val stacksOfCratesAfterOperations = operations.foldLeft(stacks)((updatedStacks, op) => applyOperationWithPicking(updatedStacks, op))
     stacksOfCratesAfterOperations.crates.map(_.head).flatten.mkString
 
-  def solutionForPart1(puzzleInput: PuzzleInput): String =
+  def solutionPart1(puzzleInput: PuzzleInput): String =
     topCratesAfterOperations(puzzleInput, cratePickingOperationPart1)
 
-  def solutionForPart2(puzzleInput: PuzzleInput): String =
+  def solutionPart2(puzzleInput: PuzzleInput): String =
     topCratesAfterOperations(puzzleInput, cratePickingOperationPart2)
 
 @main def day5Solution: Unit =
@@ -81,5 +81,5 @@ object Day5:
   import Day5Input._
   val parsed = parse(input)
   println(parsed)
-  println(solutionForPart1(parsed))
-  println(solutionForPart2(parsed))
+  println(solutionPart1(parsed))
+  println(solutionPart2(parsed))

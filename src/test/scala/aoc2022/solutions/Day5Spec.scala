@@ -81,6 +81,8 @@ class Day5Spec extends munit.FunSuite:
       ))
   }
 
+  val applyOperationForPart1 = applyOperation(cratePickingOperationPart1)
+
   test("applyOperation: step 1") {
     val stacks = StacksOfCrates(
       List(
@@ -96,7 +98,7 @@ class Day5Spec extends munit.FunSuite:
         List("P")
       )
     )
-    assertEquals(applyOperation(stacks, Operation(1, 2, 1)), expectedStacksAfter)
+    assertEquals(applyOperationForPart1(stacks, Operation(1, 2, 1)), expectedStacksAfter)
   }
 
   test("applyOperation: step 2") {
@@ -114,7 +116,7 @@ class Day5Spec extends munit.FunSuite:
         List("Z", "N", "D", "P")
       )
     )
-    assertEquals(applyOperation(stacks, Operation(3, 1, 3)), expectedStacksAfter)
+    assertEquals(applyOperationForPart1(stacks, Operation(3, 1, 3)), expectedStacksAfter)
   }
 
   test("applyOperation: step 3") {
@@ -132,7 +134,7 @@ class Day5Spec extends munit.FunSuite:
         List("Z", "N", "D", "P")
       )
     )
-    assertEquals(applyOperation(stacks, Operation(2, 2, 1)), expectedStacksAfter)
+    assertEquals(applyOperationForPart1(stacks, Operation(2, 2, 1)), expectedStacksAfter)
   }
 
   test("applyOperation: step 4") {
@@ -150,6 +152,6 @@ class Day5Spec extends munit.FunSuite:
         List("Z", "N", "D", "P")
       )
     )
-    assertEquals(applyOperation(stacks, Operation(1, 1, 2)), expectedStacksAfter)
+    assertEquals(applyOperationForPart1(stacks, Operation(1, 1, 2)), expectedStacksAfter)
   }
 
