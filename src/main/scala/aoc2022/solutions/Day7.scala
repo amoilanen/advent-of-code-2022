@@ -9,12 +9,20 @@ object Day7:
 
   sealed trait File(val name: String):
     val isDirectory: Boolean
+    def size: Int
+    def getAllDirectories: List[File]
 
   case class Directory(override val name: String, var children: List[File] = List.empty) extends File(name):
     override val isDirectory: Boolean = true
+    override def size: Int =
+      children.map(_.size).sum
+    override def getAllDirectories: List[File] =
+      this +: children.map(_.getAllDirectories).flatten
 
   case class RegularFile(override val name: String, size: Int) extends File(name):
     override val isDirectory: Boolean = false
+    override def getAllDirectories: List[File] =
+      List.empty
 
   sealed trait Command
   case class Ls(output: List[File]) extends Command
@@ -75,6 +83,14 @@ object Day7:
     val rootDirectory = finalDirectoryStack.find(_.name == "/").get
     rootDirectory
 
+  def getDirectoriesAndTheirSizesFrom(root: Directory): List[(String, Int)] =
+    root.getAllDirectories.map(directory => (directory.name, directory.size))
+
+  def solutionPart1(parsed: List[Command]): Int =
+    val root = buildTree(parsed)
+    val directoriesWithSizes = getDirectoriesAndTheirSizesFrom(root)
+    directoriesWithSizes.map(_._2).filter(_ <= 100000).sum
+
 @main def day7Main: Unit =
   import Day7._
   import Day7Input._
@@ -82,3 +98,7 @@ object Day7:
   println(parsed)
   val tree = buildTree(parsed)
   println(tree)
+  println("All directories")
+  val sizesOfDirectories = getDirectoriesAndTheirSizesFrom(tree)
+  println(sizesOfDirectories)
+  println(solutionPart1(parsed))
