@@ -1,16 +1,17 @@
 package aoc2022.solutions
 
 import java.util.IllegalFormatException
+import scala.collection.mutable
+
+import io.circe.Encoder
 
 object Day7:
 
   sealed trait File(val name: String):
     val isDirectory: Boolean
 
-  case class Directory(override val name: String, var children: List[File] = List.empty, var parent: Option[Directory] = None) extends File(name):
+  case class Directory(override val name: String, var children: List[File] = List.empty) extends File(name):
     override val isDirectory: Boolean = true
-    def getRoot: Directory =
-      parent.fold(this)(_.getRoot)
 
   case class RegularFile(override val name: String, size: Int) extends File(name):
     override val isDirectory: Boolean = false
@@ -49,17 +50,15 @@ object Day7:
     commands.map(parseCommand)
 
   def buildTree(commands: List[Command]): Directory =
-    val rootDirectory = Directory("/")
+    val directoryStack = List(Directory("/"))
     val commandsToInterpret = commands.drop(1) // drop "cd /
-    val finalCurrentDirectory = commandsToInterpret.foldLeft(rootDirectory)((currentDirectory, currentCommand) =>
-      println(s"Current directory: $currentDirectory")
-      println(s"Current command: $currentCommand")
+    val finalDirectoryStack = commandsToInterpret.foldLeft(directoryStack)((directoryStack, currentCommand) =>
+      if (directoryStack.isEmpty)
+        throw new IllegalStateException(s"Navigated away from the file system, directory stack cannot be empty, command $currentCommand")
+      val currentDirectory = directoryStack.head
       currentCommand match {
         case CdUp =>
-          if (currentDirectory.parent.isEmpty)
-            throw new IllegalStateException(s"Tried to navigate up from a directory not having parent directory directory '$currentDirectory', command '$currentCommand'")
-          else
-            currentDirectory.parent.get
+          directoryStack.drop(1)
         case CdToChildDirectory(directoryName) =>
           val childDirectory = currentDirectory.children.find(child =>
             child.name == directoryName && child.isDirectory
@@ -67,18 +66,14 @@ object Day7:
           if (childDirectory.isEmpty)
             throw new IllegalStateException(s"Could not find directory name $childDirectory in directory '$currentDirectory', command '$currentCommand'")
           else
-            childDirectory.asInstanceOf[Option[Directory]].get
+            childDirectory.get.asInstanceOf[Directory] +: directoryStack
         case Ls(foundChildren) =>
-          foundChildren.foreach({
-            case child: Directory =>
-              child.parent = Some(currentDirectory)
-            case _: File =>
-          })
           currentDirectory.children = foundChildren
-          currentDirectory
+          directoryStack
       }
     )
-    finalCurrentDirectory.getRoot
+    val rootDirectory = finalDirectoryStack.find(_.name == "/").get
+    rootDirectory
 
 @main def day7Main: Unit =
   import Day7._
