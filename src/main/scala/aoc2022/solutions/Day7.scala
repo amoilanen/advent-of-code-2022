@@ -6,10 +6,15 @@ import scala.collection.mutable
 object Day7:
 
   sealed trait File(val name: String):
-    val isDirectory: Boolean
+    val isDirectory: Boolean //TODO: How to get rid of this not very nice type class tag like method?
     lazy val computedSize: Int
     def getAllDirectories: List[File]
 
+  /*
+   * TODO: How might it be possible to easily build a tree without a var?
+   * One approach is keeping more "folding state" in buildTree: mapping of file id to the actual file and children would then contain ids instead of actual files
+   * in Directory
+   */
   case class Directory(override val name: String, var children: List[File] = List.empty) extends File(name):
     override val isDirectory: Boolean = true
     lazy val computedSize: Int =
