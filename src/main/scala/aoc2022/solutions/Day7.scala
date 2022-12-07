@@ -3,24 +3,24 @@ package aoc2022.solutions
 import java.util.IllegalFormatException
 import scala.collection.mutable
 
-import io.circe.Encoder
-
 object Day7:
 
   sealed trait File(val name: String):
     val isDirectory: Boolean
-    def size: Int
+    lazy val computedSize: Int
     def getAllDirectories: List[File]
 
   case class Directory(override val name: String, var children: List[File] = List.empty) extends File(name):
     override val isDirectory: Boolean = true
-    override def size: Int =
-      children.map(_.size).sum
+    lazy val computedSize: Int =
+      children.map(_.computedSize).sum
     override def getAllDirectories: List[File] =
       this +: children.map(_.getAllDirectories).flatten
 
   case class RegularFile(override val name: String, size: Int) extends File(name):
     override val isDirectory: Boolean = false
+    lazy val computedSize: Int =
+      size
     override def getAllDirectories: List[File] =
       List.empty
 
@@ -84,12 +84,26 @@ object Day7:
     rootDirectory
 
   def getDirectoriesAndTheirSizesFrom(root: Directory): List[(String, Int)] =
-    root.getAllDirectories.map(directory => (directory.name, directory.size))
+    root.getAllDirectories.map(directory => (directory.name, directory.computedSize))
 
   def solutionPart1(parsed: List[Command]): Int =
     val root = buildTree(parsed)
     val directoriesWithSizes = getDirectoriesAndTheirSizesFrom(root)
     directoriesWithSizes.map(_._2).filter(_ <= 100000).sum
+
+  val MinimalDiskSpaceNeededForUpdate = 30000000
+  val TotalDiskSpace = 70000000
+
+  def solutionPart2(parsed: List[Command]): Int =
+    val root = buildTree(parsed)
+    val rootSize = root.computedSize
+    val remainingDiskSpace = TotalDiskSpace - rootSize
+    val diskSpaceToFree = MinimalDiskSpaceNeededForUpdate - remainingDiskSpace
+    if (diskSpaceToFree > 0) {
+      val directoriesWithSizes = getDirectoriesAndTheirSizesFrom(root)
+      directoriesWithSizes.map(_._2).filter(_ >= diskSpaceToFree).min
+    } else
+      -1
 
 @main def day7Main: Unit =
   import Day7._
@@ -102,3 +116,4 @@ object Day7:
   val sizesOfDirectories = getDirectoriesAndTheirSizesFrom(tree)
   println(sizesOfDirectories)
   println(solutionPart1(parsed))
+  println(solutionPart2(parsed))
