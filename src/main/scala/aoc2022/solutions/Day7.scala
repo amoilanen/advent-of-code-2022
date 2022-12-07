@@ -4,9 +4,16 @@ import java.util.IllegalFormatException
 
 object Day7:
 
-  sealed trait File
-  case class Directory(name: String) extends File
-  case class RegularFile(name: String, size: Int) extends File
+  sealed trait File(val name: String):
+    val isDirectory: Boolean
+
+  case class Directory(override val name: String, var children: List[File] = List.empty, var parent: Option[Directory] = None) extends File(name):
+    override val isDirectory: Boolean = true
+    def getRoot: Directory =
+      parent.fold(this)(_.getRoot)
+
+  case class RegularFile(override val name: String, size: Int) extends File(name):
+    override val isDirectory: Boolean = false
 
   sealed trait Command
   case class Ls(output: List[File]) extends Command
@@ -15,8 +22,6 @@ object Day7:
   case class CdToChildDirectory(dirName: String) extends Cd
   object CdUp extends Cd:
     override def toString: String = "CdUp"
-
-  case class Commands(commands: List[Command])
 
   def parseFile(input: String): File =
     val Array(left, right) = input.split(" ")
@@ -39,15 +44,46 @@ object Day7:
     else
       throw RuntimeException(s"Could not parse command '$input'")
 
-  def parse(input: String): Commands =
+  def parse(input: String): List[Command] =
     val commands = input.split("\\$").map(_.trim).filter(_.nonEmpty).toList
-    commands.foreach(command =>
-      println(s"'$command'")
+    commands.map(parseCommand)
+
+  def buildTree(commands: List[Command]): Directory =
+    val rootDirectory = Directory("/")
+    val commandsToInterpret = commands.drop(1) // drop "cd /
+    val finalCurrentDirectory = commandsToInterpret.foldLeft(rootDirectory)((currentDirectory, currentCommand) =>
+      println(s"Current directory: $currentDirectory")
+      println(s"Current command: $currentCommand")
+      currentCommand match {
+        case CdUp =>
+          if (currentDirectory.parent.isEmpty)
+            throw new IllegalStateException(s"Tried to navigate up from a directory not having parent directory directory '$currentDirectory', command '$currentCommand'")
+          else
+            currentDirectory.parent.get
+        case CdToChildDirectory(directoryName) =>
+          val childDirectory = currentDirectory.children.find(child =>
+            child.name == directoryName && child.isDirectory
+          )
+          if (childDirectory.isEmpty)
+            throw new IllegalStateException(s"Could not find directory name $childDirectory in directory '$currentDirectory', command '$currentCommand'")
+          else
+            childDirectory.asInstanceOf[Option[Directory]].get
+        case Ls(foundChildren) =>
+          foundChildren.foreach({
+            case child: Directory =>
+              child.parent = Some(currentDirectory)
+            case _: File =>
+          })
+          currentDirectory.children = foundChildren
+          currentDirectory
+      }
     )
-    Commands(commands.map(parseCommand))
+    finalCurrentDirectory.getRoot
 
 @main def day7Main: Unit =
   import Day7._
   import Day7Input._
   val parsed = parse(input)
   println(parsed)
+  val tree = buildTree(parsed)
+  println(tree)
