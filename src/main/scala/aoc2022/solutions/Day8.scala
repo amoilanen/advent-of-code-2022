@@ -23,6 +23,44 @@ object Day8:
       values.foldLeft(0)((count, column) =>
         count + column.filter(predicate).size
       )
+    def scenicScore(rowIndex: Int, columnIndex: Int): Int =
+      val value = values(rowIndex)(columnIndex)
+      val lowerToBottom = (rowIndex + 1 to rowCount - 1).takeWhile(idx => values(idx)(columnIndex) < value).size
+      val visibleToBottom = if (lowerToBottom < rowCount - rowIndex - 1) // (rowIndex + 1 to rowCount - 1).size
+        lowerToBottom + 1
+      else
+        lowerToBottom
+      val lowerToTop = (0 to rowIndex - 1).reverse.takeWhile(idx => values(idx)(columnIndex) < value).size
+      val visibleToTop = if (lowerToTop < rowIndex) // (0 to rowIndex - 1).size
+        lowerToTop + 1
+      else
+        lowerToTop
+      val lowerToRight = (columnIndex + 1 to columnCount - 1).takeWhile(idx => values(rowIndex)(idx) < value).size
+      val visibleToRight = if (lowerToRight < columnCount - columnIndex - 1) // (columnIndex + 1 to columnCount - 1).size
+        lowerToRight + 1
+      else
+        lowerToRight
+      val lowerToLeft = (0 to columnIndex - 1).reverse.takeWhile(idx => values(rowIndex)(idx) < value).size
+      val visibleToLeft = if (lowerToLeft < columnIndex) // (0 to columnIndex - 1).size
+        lowerToLeft + 1
+      else
+        lowerToLeft
+      /*
+      println(s"visibleToLeft = $visibleToLeft")
+      println(s"visibleToTop = $visibleToTop")
+      println(s"visibleToRight = $visibleToRight")
+      println(s"visibleToBottom = $visibleToBottom")
+      */
+      visibleToLeft * visibleToRight * visibleToTop * visibleToBottom
+
+    def bestScenicScore: Int =
+      val scenicScores =
+        (0 until rowCount).flatMap(rowIndex =>
+          (0 until columnCount).map(columnIndex =>
+            scenicScore(rowIndex, columnIndex)
+          )
+        )
+      scenicScores.max
 
   def minBoundary(boundaries: Grid*): Grid =
     boundaries.reduce((x, y) => x.min(y))
@@ -114,18 +152,26 @@ object Day8:
   def solutionPart1(trees: Grid): Int =
     visibleTrees(trees).count(_ > 0)
 
+  def solutionPart2(trees: Grid): Int =
+    trees.bestScenicScore
+
 @main def day8Main: Unit =
   import Day8._
   import Day8Input._
   val parsed = parse(input)
-  println(parsed)
+  /*
   println(leftBoundary(parsed))
   println(rightBoundary(parsed))
   println(topBoundary(parsed))
   println(bottomBoundary(parsed))
   println(computeVisibleBoundary(parsed))
   println(visibleTrees(parsed))
+  */
   println(solutionPart1(parsed))
+  println(solutionPart2(parsed))
+
+  //println(parsed.scenicScore(1, 2))
+  //println(parsed.scenicScore(3, 2))
   //val visible = visibleTrees(parsed)
   //println(visible)
 
