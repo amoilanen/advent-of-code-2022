@@ -24,6 +24,49 @@ object Day9:
   def parse(input: String): Seq[Move] =
     input.split("\n").map(_.trim).filter(_.nonEmpty).map(parseMove)
 
+  // We can view Point both a point on a 2D plain but also as a Vector on a 2D plain
+  case class Point(x: Int, y: Int):
+    def subtract(other: Point): Point =
+      Point(x - other.x, y - other.y)
+    def add(other: Point): Point =
+      Point(x + other.x, y + other.y)
+    private def normalizeMovement(coordinate: Int) =
+      if (coordinate == 0)
+        0
+      else
+        coordinate / Math.abs(coordinate)
+    def normalizeMovement: Point =
+      Point(normalizeMovement(x), normalizeMovement(y))
+
+  case class TailTrail(trail: Set[Point])
+
+  def directionVector(direction: Direction): Point =
+    import Direction._
+    direction match {
+      case Right => Point(1, 0)
+      case Up => Point(0, 1)
+      case Left => Point(-1, 0)
+      case Down => Point(0, -1)
+    }
+
+  case class Rope(head: Point, tail: Point):
+
+    def avoidMovingOntoHead(tailMovementVector: Point): Point =
+      val coordinates = Set(tailMovementVector.x, tailMovementVector.y)
+      if (coordinates.forall(Math.abs(_) <= 1))
+        Point(0, 0)
+      else
+        tailMovementVector
+
+    def dragTail: (Rope, TailTrail) =
+      val tailMovementVector = avoidMovingOntoHead(head.subtract(tail)).normalizeMovement
+      val newRope = this.copy(tail = tail.add(tailMovementVector))
+      val trail = TailTrail(Set(tail, newRope.tail))
+      (newRope, trail)
+
+    def move(headMove: Move): Rope =
+      ???
+
 @main def day9Main: Unit =
   import Day9._
   import Day9Input._
