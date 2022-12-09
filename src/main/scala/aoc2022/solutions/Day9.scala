@@ -38,7 +38,13 @@ object Day9:
     def normalizeMovement: Point =
       Point(normalizeMovement(x), normalizeMovement(y))
 
-  case class TailTrail(trail: Set[Point])
+  case class TailTrail(trail: Set[Point]):
+    def append(other: TailTrail): TailTrail =
+      TailTrail(trail.union(other.trail))
+
+  object TailTrail:
+    val empty: TailTrail =
+      TailTrail(Set())
 
   def directionVector(direction: Direction): Point =
     import Direction._
@@ -64,11 +70,43 @@ object Day9:
       val trail = TailTrail(Set(tail, newRope.tail))
       (newRope, trail)
 
-    def move(headMove: Move): Rope =
-      ???
+    def withEmptyTrail: RopeAndTailTrail =
+      RopeAndTailTrail(this, TailTrail.empty)
+
+    def move(headMove: Move): RopeAndTailTrail =
+      val movementVector = directionVector(headMove.direction)
+      (1 to headMove.distance).foldLeft(this.withEmptyTrail)({ (ropeAndTrail, _) =>
+        val RopeAndTailTrail(rope, trailSoFar) = ropeAndTrail
+        val (updatedRope, trailPart) = rope.copy(head = rope.head.add(movementVector)).dragTail
+        RopeAndTailTrail(updatedRope, trailSoFar.append(trailPart))
+      })
+
+  case class RopeAndTailTrail(rope: Rope, tailTrail: TailTrail)
+
+  def applyMoves(initialRope: Rope, moves: Seq[Move]): RopeAndTailTrail =
+    moves.foldLeft(initialRope.withEmptyTrail)((ropeAndTrail, currentMove) =>
+      val RopeAndTailTrail(rope, trailSoFar) = ropeAndTrail
+      val RopeAndTailTrail(updatedRope, trailPart) = rope.move(currentMove)
+      RopeAndTailTrail(updatedRope, trailSoFar.append(trailPart))
+    )
+
+  def solutionForPart1(moves: Seq[Move]): Int =
+    val initialRope = Rope(Point(0, 0), Point(0, 0))
+    val RopeAndTailTrail(_, finalTrail) = applyMoves(initialRope, moves)
+    /*
+    val sortedTrail = finalTrail.trail.toList.sortWith((a, b) =>
+      if (a.y == b.y)
+        a.x < b.x
+      else
+        a.y < b.y
+    )
+    println(sortedTrail)
+    */
+    finalTrail.trail.size
 
 @main def day9Main: Unit =
   import Day9._
   import Day9Input._
   val parsed = parse(input)
-  println(parsed)
+  // println(parsed)
+  println(solutionForPart1(parsed))
