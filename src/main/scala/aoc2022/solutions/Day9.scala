@@ -98,13 +98,13 @@ object Day9:
 
     @tailrec
     private def dragRemainingTail(currentIndex: Int, rope: Array[Point]): Array[Point] =
-      if (currentIndex >= tail.length - 1)
-        rope
-      else
+      if (currentIndex < rope.length - 1)
         val smallRope = TwoLinkRope(rope(currentIndex), rope(currentIndex + 1))
         val (updatedSmallRope, _) = smallRope.dragTail
         rope(currentIndex + 1) = updatedSmallRope.tail
         dragRemainingTail(currentIndex + 1, rope)
+      else
+        rope
 
     override def dragTail: (LongRope, TailTrail) =
       val updatedTail = dragRemainingTail(0, Array(head) ++ tail).drop(1)
@@ -130,12 +130,20 @@ object Day9:
   def solutionPart1(moves: Seq[Move]): Int =
     val initialRope = TwoLinkRope(Point(0, 0), Point(0, 0))
     val RopeAndTailTrail(_, finalTrail) = applyMovesToRope(initialRope.withEmptyTrail, moves)
-    println(finalTrail)
+    //println(finalTrail)
+    finalTrail.trail.size
+
+  def solutionPart2(moves: Seq[Move]): Int =
+    val ropeLinks = (0 to 9).map(_ => Point(0, 0))
+    val initialRope = LongRope(ropeLinks.head, ropeLinks.tail.toList)
+    val RopeAndTailTrail(_, finalTrail) = applyMovesToRope(initialRope.withEmptyTrail, moves)
+    //println(finalTrail)
     finalTrail.trail.size
 
 @main def day9Main: Unit =
   import Day9._
   import Day9Input._
   val parsed = parse(input)
-  // println(parsed)
+  //println(parsed)
   println(solutionPart1(parsed))
+  println(solutionPart2(parsed))
