@@ -89,6 +89,15 @@ object Day9:
       val trail = TailTrail(Set(tail, newRope.tail))
       (newRope, trail)
 
+  case class LongRope(override val head: Point, tail: Array[Point]) extends Rope(head):
+
+    override def moveHead(headMovementVector: Point): Rope =
+      this.copy(head = head.add(headMovementVector))
+
+    override def dragTail: (LongRope, TailTrail) =
+      //TODO: Implement in terms of moving the two link ropes from which this rope consists
+      ???
+
   def move(ropeToMove: Rope, headMove: Move): RopeAndTailTrail =
     val movementVector = directionVector(headMove.direction)
     (1 to headMove.distance).foldLeft(ropeToMove.withEmptyTrail)({
