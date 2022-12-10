@@ -31,11 +31,32 @@ object Day10:
     }
     nextRegisterValue #:: registerSnapshots(nextRegisterValue, operations.tail)
 
+  private val ScreenPixelNumber = 240
+  private val ScreenWidth = 40
+
+  def render(instructions: Seq[Instruction]): List[String] =
+    val operations: List[Option[Int]] = instructionsToOperations(instructions)
+    val initialRegisterValue = 1
+    val registerValueStream = registerSnapshots(initialRegisterValue, operations)
+    val pixels = (0 until ScreenPixelNumber).toList
+    val registerValues = registerValueStream.take(ScreenPixelNumber).toList
+    pixels.zip(registerValues).map({
+      case (pixelIndex, registerValue) =>
+        val pixelHorizontalPosition = pixelIndex % ScreenWidth
+        if (pixelHorizontalPosition >= registerValue - 1 && pixelHorizontalPosition <= registerValue + 1)
+          "#"
+        else
+          "."
+    })
+
+  def formatRendering(symbols: List[String]): String =
+    symbols.grouped(ScreenWidth).map(_.mkString).mkString("\n")
+
   def registerAtCycle(cycleNumber: Int, instructions: Seq[Instruction]): Int =
     val operations: List[Option[Int]] = instructionsToOperations(instructions)
     val initialRegisterValue = 1
-    val registedValues = registerSnapshots(initialRegisterValue, operations)
-    registedValues.drop(cycleNumber - 1).head
+    val registerValueStream = registerSnapshots(initialRegisterValue, operations)
+    registerValueStream.drop(cycleNumber - 1).head
 
   private val Part1Cycles = List(20, 60, 100, 140, 180, 220)
 
@@ -44,9 +65,13 @@ object Day10:
       cycleCount * registerAtCycle(cycleCount, instructions)
     ).sum
 
+  def solutionPart2(instructions: Seq[Instruction]): String =
+    formatRendering(render(instructions))
+
 @main
 def day10Main: Unit =
   import Day10._
   import Day10Input._
   val parsed = parse(input)
   println(solutionPart1(parsed))
+  println(solutionPart2(parsed))
