@@ -24,22 +24,29 @@ object Day10:
     else
       List(None) ++ operations
 
-  private def registerSnapshots(currentRegisterValue: Int, executedOperations: List[Option[Int]]): LazyList[Int] =
-    val nextRegisterValue = executedOperations.headOption.flatten match {
+  private def registerSnapshots(currentRegisterValue: Int, operations: List[Option[Int]]): LazyList[Int] =
+    val nextRegisterValue = operations.headOption.flatten match {
       case None => currentRegisterValue
       case Some(change) => currentRegisterValue + change
     }
-    nextRegisterValue #:: registerSnapshots(nextRegisterValue, executedOperations.tail)
+    nextRegisterValue #:: registerSnapshots(nextRegisterValue, operations.tail)
 
   def registerAtCycle(cycleNumber: Int, instructions: Seq[Instruction]): Int =
-    val executedOperations: List[Option[Int]] = instructionsToOperations(instructions)
+    val operations: List[Option[Int]] = instructionsToOperations(instructions)
     val initialRegisterValue = 1
-    val registedValues = registerSnapshots(initialRegisterValue, executedOperations)
+    val registedValues = registerSnapshots(initialRegisterValue, operations)
     registedValues.drop(cycleNumber - 1).head
+
+  private val Part1Cycles = List(20, 60, 100, 140, 180, 220)
+
+  def solutionPart1(instructions: Seq[Instruction]): Int =
+    Part1Cycles.map(cycleCount =>
+      cycleCount * registerAtCycle(cycleCount, instructions)
+    ).sum
 
 @main
 def day10Main: Unit =
   import Day10._
   import Day10Input._
   val parsed = parse(input)
-  println(parsed)
+  println(solutionPart1(parsed))
