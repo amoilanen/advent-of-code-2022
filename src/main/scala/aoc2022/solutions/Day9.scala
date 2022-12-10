@@ -1,5 +1,7 @@
 package aoc2022.solutions
 
+import scala.annotation.tailrec
+
 object Day9:
 
   enum Direction:
@@ -89,14 +91,26 @@ object Day9:
       val trail = TailTrail(Set(tail, newRope.tail))
       (newRope, trail)
 
-  case class LongRope(override val head: Point, tail: Array[Point]) extends Rope(head):
+  case class LongRope(override val head: Point, tail: List[Point]) extends Rope(head):
 
     override def moveHead(headMovementVector: Point): Rope =
       this.copy(head = head.add(headMovementVector))
 
+    @tailrec
+    private def dragRemainingTail(currentIndex: Int, rope: Array[Point]): Array[Point] =
+      if (currentIndex >= tail.length - 1)
+        rope
+      else
+        val smallRope = TwoLinkRope(rope(currentIndex), rope(currentIndex + 1))
+        val (updatedSmallRope, _) = smallRope.dragTail
+        rope(currentIndex + 1) = updatedSmallRope.tail
+        dragRemainingTail(currentIndex + 1, rope)
+
     override def dragTail: (LongRope, TailTrail) =
-      //TODO: Implement in terms of moving the two link ropes from which this rope consists
-      ???
+      val updatedTail = dragRemainingTail(0, Array(head) ++ tail).drop(1)
+      val previousTailEnd = tail.last
+      val updatedTailEnd = updatedTail.last
+      (this.copy(tail = updatedTail.toList), TailTrail(Set(previousTailEnd, updatedTailEnd)))
 
   def move(ropeToMove: Rope, headMove: Move): RopeAndTailTrail =
     val movementVector = directionVector(headMove.direction)

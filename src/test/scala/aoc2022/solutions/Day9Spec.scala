@@ -35,15 +35,15 @@ class Day9Spec extends munit.FunSuite:
 
   test("LongRope.dragTail: when trail moves") {
     assertEquals(
-      LongRope(Point(3, 0), Array(Point(2, 0), Point(1, 0), Point(0, 0), Point(0, 0),
+      LongRope(Point(4, 0), List(Point(2, 0), Point(1, 0), Point(0, 0), Point(0, 0),
         Point(0, 0), Point(0, 0), Point(0, 0), Point(0, 0), Point(0, 0), Point(0, 0))).dragTail,
-      (LongRope(Point(4, 0), Array(Point(3, 0), Point(2, 0), Point(1, 0), Point(0, 0),
+      (LongRope(Point(4, 0), List(Point(3, 0), Point(2, 0), Point(1, 0), Point(0, 0),
         Point(0, 0), Point(0, 0), Point(0, 0), Point(0, 0), Point(0, 0), Point(0, 0))), TailTrail(Set(Point(0, 0))))
     )
     assertEquals(
-      LongRope(Point(4, 4), Array(Point(4, 2), Point(3, 1), Point(2, 1), Point(1, 1), Point(0, 0), Point(0, 0),
+      LongRope(Point(4, 4), List(Point(4, 2), Point(3, 1), Point(2, 1), Point(1, 1), Point(0, 0), Point(0, 0),
         Point(0, 0), Point(0, 0), Point(0, 0), Point(0, 0))).dragTail,
-      (LongRope(Point(4, 4), Array(Point(4, 3), Point(4, 2), Point(3, 2), Point(2, 2), Point(1, 1), Point(0, 0),
+      (LongRope(Point(4, 4), List(Point(4, 3), Point(4, 2), Point(3, 2), Point(2, 2), Point(1, 1), Point(0, 0),
         Point(0, 0), Point(0, 0), Point(0, 0), Point(0, 0))), TailTrail(Set(Point(0, 0))))
     )
   }
