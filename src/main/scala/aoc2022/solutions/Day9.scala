@@ -41,6 +41,14 @@ object Day9:
   case class TailTrail(trail: Set[Point]):
     def append(other: TailTrail): TailTrail =
       TailTrail(trail.union(other.trail))
+    override def toString: String =
+      val sortedTrail = trail.toList.sortWith((a, b) =>
+        if (a.y == b.y)
+          a.x < b.x
+        else
+          a.y < b.y
+      )
+      s"TailTrail[ $sortedTrail ]"
 
   object TailTrail:
     val empty: TailTrail =
@@ -55,7 +63,15 @@ object Day9:
       case Down => Point(0, -1)
     }
 
-  case class Rope(head: Point, tail: Point):
+  trait Rope(val head: Point):
+    def withEmptyTrail: RopeAndTailTrail =
+      RopeAndTailTrail(this, TailTrail.empty)
+    def moveHead(headMovementVector: Point): Rope
+    def dragTail: (Rope, TailTrail)
+
+  case class RopeAndTailTrail(rope: Rope, tailTrail: TailTrail)
+
+  case class TwoLinkRope(override val head: Point, tail: Point) extends Rope(head):
 
     def avoidMovingOntoHead(tailMovementVector: Point): Point =
       val coordinates = Set(tailMovementVector.x, tailMovementVector.y)
@@ -64,44 +80,34 @@ object Day9:
       else
         tailMovementVector
 
-    def dragTail: (Rope, TailTrail) =
+    override def moveHead(headMovementVector: Point): Rope =
+      this.copy(head = head.add(headMovementVector))
+
+    override def dragTail: (TwoLinkRope, TailTrail) =
       val tailMovementVector = avoidMovingOntoHead(head.subtract(tail)).normalizeMovement
       val newRope = this.copy(tail = tail.add(tailMovementVector))
       val trail = TailTrail(Set(tail, newRope.tail))
       (newRope, trail)
 
-    def withEmptyTrail: RopeAndTailTrail =
-      RopeAndTailTrail(this, TailTrail.empty)
-
-    def move(headMove: Move): RopeAndTailTrail =
-      val movementVector = directionVector(headMove.direction)
-      (1 to headMove.distance).foldLeft(this.withEmptyTrail)({ (ropeAndTrail, _) =>
-        val RopeAndTailTrail(rope, trailSoFar) = ropeAndTrail
-        val (updatedRope, trailPart) = rope.copy(head = rope.head.add(movementVector)).dragTail
+  def move(ropeToMove: Rope, headMove: Move): RopeAndTailTrail =
+    val movementVector = directionVector(headMove.direction)
+    (1 to headMove.distance).foldLeft(ropeToMove.withEmptyTrail)({
+      case (RopeAndTailTrail(rope: Rope, trailSoFar), _) =>
+        val (updatedRope, trailPart) = rope.moveHead(movementVector).dragTail
         RopeAndTailTrail(updatedRope, trailSoFar.append(trailPart))
-      })
+    })
 
-  case class RopeAndTailTrail(rope: Rope, tailTrail: TailTrail)
-
-  def applyMoves(initialRope: Rope, moves: Seq[Move]): RopeAndTailTrail =
-    moves.foldLeft(initialRope.withEmptyTrail)((ropeAndTrail, currentMove) =>
+  def applyMovesToRope(initialRope: RopeAndTailTrail, moves: Seq[Move]): RopeAndTailTrail =
+    moves.foldLeft(initialRope)((ropeAndTrail, currentMove) =>
       val RopeAndTailTrail(rope, trailSoFar) = ropeAndTrail
-      val RopeAndTailTrail(updatedRope, trailPart) = rope.move(currentMove)
+      val RopeAndTailTrail(updatedRope, trailPart) = move(rope, currentMove)
       RopeAndTailTrail(updatedRope, trailSoFar.append(trailPart))
     )
 
-  def solutionForPart1(moves: Seq[Move]): Int =
-    val initialRope = Rope(Point(0, 0), Point(0, 0))
-    val RopeAndTailTrail(_, finalTrail) = applyMoves(initialRope, moves)
-    /*
-    val sortedTrail = finalTrail.trail.toList.sortWith((a, b) =>
-      if (a.y == b.y)
-        a.x < b.x
-      else
-        a.y < b.y
-    )
-    println(sortedTrail)
-    */
+  def solutionPart1(moves: Seq[Move]): Int =
+    val initialRope = TwoLinkRope(Point(0, 0), Point(0, 0))
+    val RopeAndTailTrail(_, finalTrail) = applyMovesToRope(initialRope.withEmptyTrail, moves)
+    println(finalTrail)
     finalTrail.trail.size
 
 @main def day9Main: Unit =
@@ -109,4 +115,4 @@ object Day9:
   import Day9Input._
   val parsed = parse(input)
   // println(parsed)
-  println(solutionForPart1(parsed))
+  println(solutionPart1(parsed))
