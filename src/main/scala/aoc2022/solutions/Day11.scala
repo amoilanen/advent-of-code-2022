@@ -6,14 +6,14 @@ object Day11:
 
   case class Monkey(
     id: Int,
-    initialItems: List[Int],
-    operation: Int => Int,
-    divisibleBy: Int,
+    initialItems: List[Long],
+    operation: Long => Long,
+    divisibleBy: Long,
     monkeyIdIfDivisible: Int,
     monkeyIdIfNotDivisible: Int
   ):
-    def inspectItem(item: Int, worryLevelReducer: Int): (Int, Int) =
-      val worryLevel = operation(item) / worryLevelReducer
+    def inspectItem(item: Long, worryLevelReducer: Long => Long): (Long, Int) =
+      val worryLevel = worryLevelReducer(operation(item))
       val nextMonkeyId = if (worryLevel % divisibleBy == 0)
         monkeyIdIfDivisible
       else
@@ -32,7 +32,7 @@ object Day11:
     }
     val initialItems = itemsInput match {
       case s"Starting items: $items" =>
-        items.split(",").map(_.trim.toInt).toList
+        items.split(",").map(_.trim.toLong).toList
     }
     val operation = operationInput match {
       case s"Operation: $operation" =>
@@ -40,7 +40,7 @@ object Day11:
     }
     val divisibleBy = testInput match {
       case s"Test: divisible by $value" =>
-        value.toInt
+        value.toLong
     }
     val monkeyIdIfDivisible = ifTrueInput match {
       case s"If true: throw to monkey $id" =>
@@ -52,24 +52,24 @@ object Day11:
     }
     Monkey(id, initialItems, operation, divisibleBy, monkeyIdIfDivisible, monkeyIdIfNotDivisible)
 
-  def parseMonkeyFunction(input: String): Int => Int =
+  def parseMonkeyFunction(input: String): Long => Long =
     input match {
-      case s"new = old + old" => (x: Int) => x + x
-      case s"new = old * old" => (x: Int) => x * x
-      case s"new = old + $value" => (x: Int) => x + value.toInt
-      case s"new = old * $value" => (x: Int) => x * value.toInt
-      case s"new = $value + old" => (x: Int) => x + value.toInt
-      case s"new = $value * old" => (x: Int) => x * value.toInt
+      case s"new = old + old" => (x: Long) => x + x
+      case s"new = old * old" => (x: Long) => x * x
+      case s"new = old + $value" => (x: Long) => x + value.toLong
+      case s"new = old * $value" => (x: Long) => x * value.toLong
+      case s"new = $value + old" => (x: Long) => x + value.toLong
+      case s"new = $value * old" => (x: Long) => x * value.toLong
     }
 
-  case class MutableRoundState(monkeyItems: Array[List[Int]], monkeyOperations: Array[Int])
+  case class MutableRoundState(monkeyItems: Array[List[Long]], monkeyOperations: Array[Long])
   object MutableRoundState:
     def initial(monkeys: Seq[Monkey]): MutableRoundState =
       val items = monkeys.map(_.initialItems).toArray
-      val operations = (0 until monkeys.size).map(_ => 0).toArray
+      val operations = (0 until monkeys.size).map(_ => 0L).toArray
       MutableRoundState(items, operations)
 
-  def evaluateRound(monkeys: Seq[Monkey], worryLevelReducer: Int, roundState: MutableRoundState): MutableRoundState =
+  def evaluateRound(monkeys: Seq[Monkey], worryLevelReducer: Long => Long, roundState: MutableRoundState): MutableRoundState =
     monkeys.foreach(monkey =>
       val monkeyId = monkey.id
       val monkeyItems = roundState.monkeyItems(monkeyId)
@@ -83,23 +83,35 @@ object Day11:
     )
     roundState
 
-  def evaluateRounds(monkeys: Seq[Monkey], worryLevelReducer: Int, roundsNumber: Int): MutableRoundState =
+  def evaluateRounds(monkeys: Seq[Monkey], worryLevelReducer: Long => Long, roundsNumber: Int): MutableRoundState =
     (1 to roundsNumber).foldLeft(MutableRoundState.initial(monkeys))((state, _) =>
       evaluateRound(monkeys, worryLevelReducer, state)
     )
 
-  def operationCounts(monkeys: Seq[Monkey], worryLevelReducer: Int, roundsNumber: Int): List[Int] =
+  def operationCounts(monkeys: Seq[Monkey], worryLevelReducer: Long => Long, roundsNumber: Int): List[Long] =
     val MutableRoundState(_, monkeyOperations) = evaluateRounds(monkeys, worryLevelReducer, roundsNumber)
     monkeyOperations.toList
 
-  def levelOfMonkeyBusiness(monkeys: Seq[Monkey], worryLevelReducer: Int, roundsNumber: Int) =
-    operationCounts(monkeys, worryLevelReducer, roundsNumber).sorted.reverse.take(2).reduce(_ * _)
+  def operationCountsPart2(monkeys: Seq[Monkey], roundsNumber: Int): List[Long] =
+    val commonModule = monkeys.map(_.divisibleBy).reduce(_ * _)
+    def byModuleReducer(x: Long): Long =
+      x % commonModule
+    operationCounts(monkeys, byModuleReducer, roundsNumber)
 
-  val Part1WorryLevelReducer = 3
+  def levelOfMonkeyBusiness(operations: List[Long]): Long =
+    operations.sorted.reverse.take(2).reduce(_ * _)
+
   val Part1Rounds = 20
+  val Part2Rounds = 10000
 
-  def solutionPart1(monkeys: Seq[Monkey]): Int =
-    levelOfMonkeyBusiness(monkeys, Part1WorryLevelReducer, Part1Rounds)
+  def divisionByThreeReducer(x: Long): Long =
+    x / 3
+
+  def solutionPart1(monkeys: Seq[Monkey]): Long =
+    levelOfMonkeyBusiness(operationCounts(monkeys, divisionByThreeReducer, Part1Rounds))
+
+  def solutionPart2(monkeys: Seq[Monkey]): Long =
+    levelOfMonkeyBusiness(operationCountsPart2(monkeys, Part2Rounds))
 
 @main
 def day11Main: Unit =
@@ -107,3 +119,4 @@ def day11Main: Unit =
   import Day11Input._
   val parsed = parse(input)
   println(solutionPart1(parsed))
+  println(solutionPart2(parsed))
