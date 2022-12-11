@@ -37,20 +37,20 @@ class Day11Spec extends munit.FunSuite:
   test("Monkey.inspectItem") {
     val monkeyZero = Monkey(0, List(79, 98), (x: Int) => x * 19, 23, 2, 3)
     assertEquals(
-      monkeyZero.inspectItem(79),
+      monkeyZero.inspectItem(79, Part1WorryLevelReducer),
       (500, 3)
     )
     assertEquals(
-      monkeyZero.inspectItem(98),
+      monkeyZero.inspectItem(98, Part1WorryLevelReducer),
       (620, 3)
     )
     val monkeyTwo = Monkey(2, List(79, 60, 97), (x: Int) => x * x, 13, 1, 3)
     assertEquals(
-      monkeyTwo.inspectItem(79),
+      monkeyTwo.inspectItem(79, Part1WorryLevelReducer),
       (2080, 1)
     )
     assertEquals(
-      monkeyTwo.inspectItem(60),
+      monkeyTwo.inspectItem(60, Part1WorryLevelReducer),
       (1200, 3)
     )
   }
@@ -58,7 +58,7 @@ class Day11Spec extends munit.FunSuite:
   test("evaluateRounds: acceptance test with the ") {
     val monkeys = parse(input)
     assertEquals(
-      evaluateRounds(monkeys, 1).monkeyItems.toList,
+      evaluateRounds(monkeys, Part1WorryLevelReducer, 1).monkeyItems.toList,
       List(
         List(20, 23, 27, 26),
         List(2080, 25, 167, 207, 401, 1046),
@@ -67,7 +67,7 @@ class Day11Spec extends munit.FunSuite:
       )
     )
     assertEquals(
-      evaluateRounds(monkeys, 2).monkeyItems.toList,
+      evaluateRounds(monkeys, Part1WorryLevelReducer, 2).monkeyItems.toList,
       List(
         List(695, 10, 71, 135, 350),
         List(43, 49, 58, 55, 362),
@@ -76,7 +76,7 @@ class Day11Spec extends munit.FunSuite:
       )
     )
     assertEquals(
-      evaluateRounds(monkeys, 10).monkeyItems.toList,
+      evaluateRounds(monkeys, Part1WorryLevelReducer, 10).monkeyItems.toList,
       List(
         List(91, 16, 20, 98),
         List(481, 245, 22, 26, 1092, 30),
@@ -85,7 +85,7 @@ class Day11Spec extends munit.FunSuite:
       )
     )
     assertEquals(
-      evaluateRounds(monkeys, 20).monkeyItems.toList,
+      evaluateRounds(monkeys, Part1WorryLevelReducer, 20).monkeyItems.toList,
       List(
         List(10, 12, 14, 26, 34),
         List(245, 93, 53, 199, 115),

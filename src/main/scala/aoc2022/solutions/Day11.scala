@@ -12,8 +12,8 @@ object Day11:
     monkeyIdIfDivisible: Int,
     monkeyIdIfNotDivisible: Int
   ):
-    def inspectItem(item: Int): (Int, Int) =
-      val worryLevel = operation(item) / 3
+    def inspectItem(item: Int, worryLevelReducer: Int): (Int, Int) =
+      val worryLevel = operation(item) / worryLevelReducer
       val nextMonkeyId = if (worryLevel % divisibleBy == 0)
         monkeyIdIfDivisible
       else
@@ -69,11 +69,11 @@ object Day11:
       val operations = (0 until monkeys.size).map(_ => 0).toArray
       MutableRoundState(items, operations)
 
-  def evaluateRound(monkeys: Seq[Monkey], roundState: MutableRoundState): MutableRoundState =
+  def evaluateRound(monkeys: Seq[Monkey], worryLevelReducer: Int, roundState: MutableRoundState): MutableRoundState =
     monkeys.foreach(monkey =>
       val monkeyId = monkey.id
       val monkeyItems = roundState.monkeyItems(monkeyId)
-      val itemsWithNextMonkeys = monkeyItems.map(monkey.inspectItem)
+      val itemsWithNextMonkeys = monkeyItems.map(monkey.inspectItem(_, worryLevelReducer))
       itemsWithNextMonkeys.foreach(itemWithMonkeyId =>
         val (item, nextMonkeyId) = itemWithMonkeyId
         roundState.monkeyOperations(monkeyId) = roundState.monkeyOperations(monkeyId) + 1
@@ -83,20 +83,27 @@ object Day11:
     )
     roundState
 
-  def evaluateRounds(monkeys: Seq[Monkey], roundsNumber: Int): MutableRoundState =
+  def evaluateRounds(monkeys: Seq[Monkey], worryLevelReducer: Int, roundsNumber: Int): MutableRoundState =
     (1 to roundsNumber).foldLeft(MutableRoundState.initial(monkeys))((state, _) =>
-      evaluateRound(monkeys, state)
+      evaluateRound(monkeys, worryLevelReducer, state)
     )
 
+  def operationCounts(monkeys: Seq[Monkey], worryLevelReducer: Int, roundsNumber: Int): List[Int] =
+    val MutableRoundState(_, monkeyOperations) = evaluateRounds(monkeys, worryLevelReducer, roundsNumber)
+    monkeyOperations.toList
+
+  def levelOfMonkeyBusiness(monkeys: Seq[Monkey], worryLevelReducer: Int, roundsNumber: Int) =
+    operationCounts(monkeys, worryLevelReducer, roundsNumber).sorted.reverse.take(2).reduce(_ * _)
+
+  val Part1WorryLevelReducer = 3
+  val Part1Rounds = 20
+
   def solutionPart1(monkeys: Seq[Monkey]): Int =
-    val MutableRoundState(_, monkeyOperations) = evaluateRounds(monkeys, 20)
-    val operationCounts = monkeyOperations.toList.sorted.reverse
-    operationCounts.take(2).reduce(_ * _)
+    levelOfMonkeyBusiness(monkeys, Part1WorryLevelReducer, Part1Rounds)
 
 @main
 def day11Main: Unit =
   import Day11._
   import Day11Input._
   val parsed = parse(input)
-  println(parsed)
   println(solutionPart1(parsed))
