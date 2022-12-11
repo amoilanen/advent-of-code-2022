@@ -11,7 +11,14 @@ object Day11:
     divisibleBy: Int,
     monkeyIdIfDivisible: Int,
     monkeyIdIfNotDivisible: Int
-  )
+  ):
+    def inspectItem(item: Int): (Int, Int) =
+      val worryLevel = operation(item) / 3
+      val nextMonkeyId = if (worryLevel % divisibleBy == 0)
+        monkeyIdIfDivisible
+      else
+        monkeyIdIfNotDivisible
+      (worryLevel, nextMonkeyId)
 
   def parse(input: String): Seq[Monkey] =
     val splitInput = splitBy("")(input.split("\n").map(_.trim)).filter(_.size > 0)
@@ -54,6 +61,32 @@ object Day11:
       case s"new = $value + old" => (x: Int) => x + value.toInt
       case s"new = $value * old" => (x: Int) => x * value.toInt
     }
+
+  case class MutableRoundState(monkeyItems: Array[List[Int]], monkeyOperations: Array[Int])
+  object MutableRoundState:
+    def initial(monkeys: Seq[Monkey]): MutableRoundState =
+      val items = monkeys.map(_.initialItems).toArray
+      val operations = (0 until monkeys.size).map(_ => 0).toArray
+      MutableRoundState(items, operations)
+
+  def evaluateRound(monkeys: Seq[Monkey], roundState: MutableRoundState): MutableRoundState =
+    monkeys.foreach(monkey =>
+      val monkeyId = monkey.id
+      val monkeyItems = roundState.monkeyItems(monkeyId)
+      val itemsWithNextMonkeys = monkeyItems.map(monkey.inspectItem)
+      itemsWithNextMonkeys.foreach(itemWithMonkeyId =>
+        val (item, nextMonkeyId) = itemWithMonkeyId
+        roundState.monkeyOperations(monkeyId) = roundState.monkeyOperations(monkeyId) + 1
+        roundState.monkeyItems(nextMonkeyId) = roundState.monkeyItems(nextMonkeyId) :+ item
+      )
+      roundState.monkeyItems(monkeyId) = List()
+    )
+    roundState
+
+  def evaluateRounds(monkeys: Seq[Monkey], roundsNumber: Int): MutableRoundState =
+    (1 to roundsNumber).foldLeft(MutableRoundState.initial(monkeys))((state, _) =>
+      evaluateRound(monkeys, state)
+    )
 
 @main
 def day11Main: Unit =
