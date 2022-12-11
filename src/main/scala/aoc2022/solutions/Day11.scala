@@ -88,9 +88,15 @@ object Day11:
       evaluateRound(monkeys, state)
     )
 
+  def solutionPart1(monkeys: Seq[Monkey]): Int =
+    val MutableRoundState(_, monkeyOperations) = evaluateRounds(monkeys, 20)
+    val operationCounts = monkeyOperations.toList.sorted.reverse
+    operationCounts.take(2).reduce(_ * _)
+
 @main
 def day11Main: Unit =
   import Day11._
   import Day11Input._
   val parsed = parse(input)
   println(parsed)
+  println(solutionPart1(parsed))

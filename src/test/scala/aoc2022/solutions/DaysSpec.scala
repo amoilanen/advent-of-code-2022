@@ -89,3 +89,11 @@ class DaysSpec extends munit.FunSuite:
         |######......######......######......####
         |#######.......#######.......#######.....""".stripMargin)
   }
+
+  test("Day 11") {
+    import Day11._
+    import Day11Input._
+    val parsed = parse(input)
+    assertEquals(solutionPart1(parsed), 10605)
+    //TODO: part2
+  }
