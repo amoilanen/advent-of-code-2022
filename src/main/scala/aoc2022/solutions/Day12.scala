@@ -4,6 +4,7 @@ import aoc2022.solutions.Day12.Edge
 import aoc2022.solutions.common.ParsingUtils.ParsingError
 
 import scala.annotation.tailrec
+import scala.collection.mutable.{ Map => MutableMap }
 
 object Day12:
 
@@ -40,53 +41,63 @@ object Day12:
         neighborElevation == ofVertex.elevation || neighborElevation == ofVertex.elevation + 1
       ).map(Edge(ofVertex, _))
 
+    def buildPathTo(to: Vertex, backreferences: Map[Vertex, Option[Vertex]]): List[Edge] =
+      @tailrec
+      def iteration(current: Vertex, builtPath: List[Edge]): List[Edge] =
+        backreferences.get(current).flatten match {
+          case Some(edgeStart) =>
+            val edge = Edge(edgeStart, current)
+            iteration(edgeStart, edge +: builtPath)
+          case None =>
+            builtPath
+        }
+
+      iteration(to, List())
+
+    //TODO: Try implementing the A* algorithm
     /*
      * Implementation of the Dijkstra's algorithm https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm
      */
     def findShortestPath(pathStart: Vertex, pathEnd: Vertex): List[Edge] =
-      val initialDistances: Map[Vertex, Int] = allVertices.map(_ -> Int.MaxValue).toList.toMap.updated(pathStart, 0)
-      val initialBackreferences: Map[Vertex, Option[Vertex]] = allVertices.map(_ -> None).toList.toMap
+      val distances: MutableMap[Vertex, Int] = MutableMap.from(allVertices.map(_ -> Int.MaxValue).toList.toMap.updated(pathStart, 0))
+      val backreferences: MutableMap[Vertex, Option[Vertex]] = MutableMap.from(allVertices.map(_ -> None).toList)
+      var remainingVertices: List[Vertex] = allVertices.toList
 
-      @tailrec
-      def algorithmIteration(distances: Map[Vertex, Int], backreferences: Map[Vertex, Option[Vertex]], remaining: List[Vertex]): (Int, List[Edge]) =
-        val remainingSortedByDistance = remaining.sortBy(distances(_))
-        remainingSortedByDistance.headOption match {
-          case None =>
-            val distanceToPathEnd = distances(pathEnd)
-            val path = buildPathTo(pathEnd, backreferences)
-            (distanceToPathEnd, path)
-          case Some(nextClosestVertex) =>
-            val updated = edgesFrom(nextClosestVertex).foldLeft((distances, backreferences))({
-              case ((currentDistances, currentBackreferences), edge) =>
-                val Edge(_, toVertex) = edge
-                val alternativeDistance = distances(nextClosestVertex) + edge.length
-                if (alternativeDistance < distances(toVertex))
-                  (currentDistances.updated(toVertex, alternativeDistance), currentBackreferences.updated(toVertex, Some(nextClosestVertex)))
-                else
-                  (currentDistances, currentBackreferences)
-            })
-            val (updatedDistances, updatedBackreferences) = updated
-            val updatedRemaining = if (nextClosestVertex == pathEnd)
-              List.empty
-            else
-              remainingSortedByDistance.tail
-            algorithmIteration(updatedDistances, updatedBackreferences, updatedRemaining)
-        }
+      /*
+      println(pathStart)
+      println(pathEnd)
+      println(distances(pathStart))
+      println(distances(pathEnd))
+      */
 
-      def buildPathTo(to: Vertex, backreferences: Map[Vertex, Option[Vertex]]): List[Edge] =
-        @tailrec
-        def iteration(current: Vertex, builtPath: List[Edge]): List[Edge] =
-          backreferences.get(current).flatten match {
-            case Some(edgeStart) =>
-              val edge = Edge(edgeStart, current)
-              iteration(edgeStart, edge +: builtPath)
-            case None =>
-              builtPath
-          }
-
-        iteration(to, List())
-
-      algorithmIteration(initialDistances, initialBackreferences, allVertices.toList)._2
+      while (remainingVertices.nonEmpty)
+        remainingVertices = remainingVertices.sortBy(distances(_))
+        val currentClosestVertex = remainingVertices.head
+        remainingVertices = remainingVertices.tail
+        if (distances(currentClosestVertex) == Int.MaxValue)
+          /*
+          println(s"lastVertex = $currentClosestVertex")
+          edgesFrom(currentClosestVertex).foreach(edge =>
+            println(s"Connected vertex ${edge.to}")
+            println(distances(edge.to))
+          )
+          */
+          throw new IllegalStateException("Next closest vertex cannot be infinitely far away") // Not a connected graph?
+        if (currentClosestVertex == pathEnd)
+          remainingVertices = List.empty
+        else
+          val edgesToVisit = edgesFrom(currentClosestVertex).filter(edge => remainingVertices.contains(edge.to))
+          edgesToVisit.foreach(edge =>
+            val alternativeDistance = distances(currentClosestVertex) + edge.length
+            if (alternativeDistance < distances(edge.to))
+              distances.update(edge.to, alternativeDistance)
+              backreferences.update(edge.to, Some(currentClosestVertex))
+          )
+          //println(currentClosestVertex)
+          //println(s"edgesToVisit = ${edgesToVisit.size}")
+      val distanceToPathEnd = distances(pathEnd)
+      //println(distanceToPathEnd)
+      buildPathTo(pathEnd, backreferences.toMap)
 
     override def toString: String =
       val verticesRepresentation = vertices.map(
@@ -127,5 +138,4 @@ def day12Main: Unit =
   import Day12._
   import Day12Input._
   val parsed = parse(input)
-  println(parsed)
   println(solutionPart1(parsed))
