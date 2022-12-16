@@ -31,3 +31,14 @@ class Day13Spec extends munit.FunSuite:
       l(e(4), e(1), l(e(2), l(e(6))), e(10), e(3), l(e(4), e(5)))
     )
   }
+
+  test("comparing packets: acceptance test from the task description") {
+    assert(parsePacket("[1,1,3,1,1]").lowerThan(parsePacket("[1,1,5,1,1]")))
+    assert(parsePacket("[[1],[2,3,4]]").lowerThan(parsePacket("[[1],4]")))
+    assert(!parsePacket("[9]").lowerThan(parsePacket("[[8,7,6]]")))
+    assert(parsePacket("[[4,4],4,4]").lowerThan(parsePacket("[[4,4],4,4,4]")))
+    assert(!parsePacket("[7,7,7,7]").lowerThan(parsePacket("[7,7,7]")))
+    assert(parsePacket("[]").lowerThan(parsePacket("[3]")))
+    assert(!parsePacket("[[[]]]").lowerThan(parsePacket("[[]]")))
+    assert(!parsePacket("[1,[2,[3,[4,[5,6,7]]]],8,9]").lowerThan(parsePacket("[1,[2,[3,[4,[5,6,0]]]],8,9]")))
+  }

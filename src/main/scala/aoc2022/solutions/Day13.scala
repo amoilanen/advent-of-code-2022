@@ -7,7 +7,9 @@ object Day13:
   // Not possible to define a recursive type with the Scala type system:
   // type NestedList[A] = A | List[NestedList[A]]
   // https://github.com/lampepfl/dotty/issues/10136
-  trait Expression[A]
+  trait Expression[A]:
+    def lowerThan(other: Expression[A]): Boolean =
+      false
   case class ListOf[A](elements: List[Expression[A]]) extends Expression[A]
   case class Element[A](value: A) extends Expression[A]
 
@@ -18,11 +20,17 @@ object Day13:
       Element[A](element)
 
   type Packet = Expression[Int]
-  case class PacketPair(left: Packet, right: Packet)
-
+  case class PacketPair(index: Int, left: Packet, right: Packet)
 
   @tailrec
   def parsePacket(input: List[String], position: Int, currentLists: List[ListOf[Int]], partialNumber: List[String]): Packet =
+    def flushNumberToList(expression: ListOf[Int], number: List[String]): ListOf[Int] =
+      val readyNumber = partialNumber.mkString
+      if partialNumber.length > 0 then
+        ListOf(expression.elements :+ Element(readyNumber.toInt))
+      else
+        expression
+
     if position == input.length then
       currentLists.head
     else
@@ -30,23 +38,13 @@ object Day13:
         case "[" =>
           parsePacket(input, position + 1, ListOf(List.empty) +: currentLists, List())
         case "]" =>
-          val readyNumber = partialNumber.mkString
-          val topListOf = currentLists.head
-          val updatedTopList = if partialNumber.length > 0 then
-            ListOf(topListOf.elements :+ Element(readyNumber.toInt))
-          else
-            topListOf
+          val updatedTopList = flushNumberToList(currentLists.head, partialNumber)
           val updatedParentList = currentLists.tail.headOption.map(parentList =>
             ListOf(elements = parentList.elements :+ updatedTopList)
           ).getOrElse(updatedTopList)
           parsePacket(input, position + 1, updatedParentList +: currentLists.drop(2), List())
         case "," =>
-          val readyNumber = partialNumber.mkString
-          val topListOf = currentLists.head
-          val updatedTopList = if partialNumber.length > 0 then
-            ListOf(topListOf.elements :+ Element(readyNumber.toInt))
-          else
-            topListOf
+          val updatedTopList = flushNumberToList(currentLists.head, partialNumber)
           parsePacket(input, position + 1, updatedTopList +: currentLists.drop(1), List())
         case digit: String =>
           parsePacket(input, position + 1, currentLists, partialNumber ++ List(digit))
