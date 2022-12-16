@@ -21,43 +21,39 @@ object Day13:
   case class PacketPair(left: Packet, right: Packet)
 
 
-  //@tailrec
-  def parsePacket(input: List[String], position: Int, currentLists: List[Expression[Int]], partialNumber: List[String]): Packet =
-    ???
-    /*
+  @tailrec
+  def parsePacket(input: List[String], position: Int, currentLists: List[ListOf[Int]], partialNumber: List[String]): Packet =
     if position == input.length then
       currentLists.head
     else
       input(position) match {
         case "[" =>
-          parsePacket(input, position + 1, currentLists, List())
+          parsePacket(input, position + 1, ListOf(List.empty) +: currentLists, List())
         case "]" =>
-          val readyNumber = partialNumber.mkString.toInt
-          val topListBeingConstructed = currentLists.headOption.getOrElse(List.empty)
+          val readyNumber = partialNumber.mkString
+          val topListOf = currentLists.head
           val updatedTopList = if partialNumber.length > 0 then
-            topListBeingConstructed ++ List(readyNumber)
+            ListOf(topListOf.elements :+ Element(readyNumber.toInt))
           else
-            topListBeingConstructed
-          val updatedParentList = if currentLists.length > 1 then
-            currentLists(1) ++ List(updatedTopList)
-          else
-            updatedTopList
-          parsePacket(input, position + 1, List(updatedParentList) ++ currentLists.drop(2), List())
+            topListOf
+          val updatedParentList = currentLists.tail.headOption.map(parentList =>
+            ListOf(elements = parentList.elements :+ updatedTopList)
+          ).getOrElse(updatedTopList)
+          parsePacket(input, position + 1, updatedParentList +: currentLists.drop(2), List())
         case "," =>
-          val readyNumber = partialNumber.mkString.toInt
-          val topListBeingConstructed = currentLists.head
+          val readyNumber = partialNumber.mkString
+          val topListOf = currentLists.head
           val updatedTopList = if partialNumber.length > 0 then
-            topListBeingConstructed :+ readyNumber
+            ListOf(topListOf.elements :+ Element(readyNumber.toInt))
           else
-            topListBeingConstructed
-          parsePacket(input, position + 1, List(updatedTopList) ++ currentLists.drop(1), List())
+            topListOf
+          parsePacket(input, position + 1, updatedTopList +: currentLists.drop(1), List())
         case digit: String =>
           parsePacket(input, position + 1, currentLists, partialNumber ++ List(digit))
       }
-     */
 
   def parsePacket(input: String): Packet =
-    parsePacket(input.split("").filter(_.nonEmpty).toList, 0, List(), List())
+    parsePacket(input.split("").filter(_.nonEmpty).toList, 0, List.empty, List())
 
   def parse(input: String): Seq[PacketPair] =
     ???
