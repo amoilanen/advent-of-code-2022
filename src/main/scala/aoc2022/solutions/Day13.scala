@@ -7,16 +7,22 @@ object Day13:
   // Not possible to define a recursive type with the Scala type system:
   // type NestedList[A] = A | List[NestedList[A]]
   // https://github.com/lampepfl/dotty/issues/10136
-  trait Expression[A]:
+  abstract class Expression[A: Ordering]:
     def lowerThan(other: Expression[A]): Boolean =
-      false
-  case class ListOf[A](elements: List[Expression[A]]) extends Expression[A]
-  case class Element[A](value: A) extends Expression[A]
+      val ordering = summon[Ordering[A]]
+      (this, other) match {
+        case (Element(x), Element(y)) =>
+          ordering.lt(x, y)
+        case _ =>
+          false
+      }
+  case class ListOf[A: Ordering](elements: List[Expression[A]]) extends Expression[A]
+  case class Element[A: Ordering](value: A) extends Expression[A]
 
   object Expression:
-    def l[A](elements: Expression[A]*): Expression[A] =
+    def l[A: Ordering](elements: Expression[A]*): Expression[A] =
       ListOf(elements.toList)
-    def e[A](element: A): Expression[A] =
+    def e[A: Ordering](element: A): Expression[A] =
       Element[A](element)
 
   type Packet = Expression[Int]
