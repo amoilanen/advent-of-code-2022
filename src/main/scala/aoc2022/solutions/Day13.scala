@@ -13,9 +13,26 @@ object Day13:
       (this, other) match {
         case (Element(x), Element(y)) =>
           ordering.lt(x, y)
+        case (ListOf(xElements), ListOf(yElements)) =>
+          (xElements, yElements) match {
+            case (xHead::xTail, yHead::yTail) =>
+              if (xHead.lowerThan(yHead))
+                true
+              else if (yHead.lowerThan(xHead))
+                false
+              else
+                ListOf(xTail).lowerThan(ListOf(yTail))
+            case (Nil, _::_) =>
+              true
+            case (_::_, Nil) =>
+              false
+            case (Nil, Nil) =>
+              false
+          }
         case _ =>
           false
       }
+
   case class ListOf[A: Ordering](elements: List[Expression[A]]) extends Expression[A]
   case class Element[A: Ordering](value: A) extends Expression[A]
 
