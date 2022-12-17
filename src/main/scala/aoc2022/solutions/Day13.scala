@@ -13,6 +13,10 @@ object Day13:
       (this, other) match {
         case (Element(x), Element(y)) =>
           ordering.lt(x, y)
+        case (x: Element[A], y: ListOf[A]) =>
+          ListOf(List(x)).lowerThan(y)
+        case (x: ListOf[A], y: Element[A]) =>
+          x.lowerThan(ListOf(List(y)))
         case (ListOf(xElements), ListOf(yElements)) =>
           (xElements, yElements) match {
             case (xHead::xTail, yHead::yTail) =>

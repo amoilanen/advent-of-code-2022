@@ -57,4 +57,6 @@ class Day13Spec extends munit.FunSuite:
     assert(l(e(2), e(3)).lowerThan(l(e(2), e(3), e(7))))
     assert(!l(e(2), e(3), e(7)).lowerThan(l(e(2), e(3))))
     assert(l(l(e(1), e(2)), l(e(3), e(4))).lowerThan(l(l(e(1), e(2)), l(e(3), e(6)))))
+    assert(e(3).lowerThan(l(e(5))))
+    assert(l(e(3)).lowerThan(e(5)))
   }
