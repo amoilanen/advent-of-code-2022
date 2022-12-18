@@ -38,7 +38,7 @@ object Day12:
     def edgesFrom(ofVertex: Vertex): Seq[Edge] =
       neighbors(ofVertex).filter(neighbor =>
         val neighborElevation = neighbor.elevation
-        neighborElevation == ofVertex.elevation || neighborElevation == ofVertex.elevation + 1
+        neighborElevation == ofVertex.elevation || neighborElevation == ofVertex.elevation + 1 || neighborElevation < ofVertex.elevation
       ).map(Edge(ofVertex, _))
 
     def buildPathTo(to: Vertex, backreferences: Map[Vertex, Option[Vertex]]): List[Edge] =
@@ -54,35 +54,18 @@ object Day12:
 
       iteration(to, List())
 
-    //TODO: Try implementing the A* algorithm
     /*
      * Implementation of the Dijkstra's algorithm https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm
      */
-    def findShortestPath(pathStart: Vertex, pathEnd: Vertex): List[Edge] =
+    def shortestPathLength(pathStart: Vertex, pathEnd: Vertex): Int =
       val distances: MutableMap[Vertex, Int] = MutableMap.from(allVertices.map(_ -> Int.MaxValue).toList.toMap.updated(pathStart, 0))
       val backreferences: MutableMap[Vertex, Option[Vertex]] = MutableMap.from(allVertices.map(_ -> None).toList)
       var remainingVertices: List[Vertex] = allVertices.toList
-
-      /*
-      println(pathStart)
-      println(pathEnd)
-      println(distances(pathStart))
-      println(distances(pathEnd))
-      */
 
       while (remainingVertices.nonEmpty)
         remainingVertices = remainingVertices.sortBy(distances(_))
         val currentClosestVertex = remainingVertices.head
         remainingVertices = remainingVertices.tail
-        if (distances(currentClosestVertex) == Int.MaxValue)
-          /*
-          println(s"lastVertex = $currentClosestVertex")
-          edgesFrom(currentClosestVertex).foreach(edge =>
-            println(s"Connected vertex ${edge.to}")
-            println(distances(edge.to))
-          )
-          */
-          throw new IllegalStateException("Next closest vertex cannot be infinitely far away") // Not a connected graph?
         if (currentClosestVertex == pathEnd)
           remainingVertices = List.empty
         else
@@ -93,11 +76,12 @@ object Day12:
               distances.update(edge.to, alternativeDistance)
               backreferences.update(edge.to, Some(currentClosestVertex))
           )
-          //println(currentClosestVertex)
-          //println(s"edgesToVisit = ${edgesToVisit.size}")
       val distanceToPathEnd = distances(pathEnd)
-      //println(distanceToPathEnd)
-      buildPathTo(pathEnd, backreferences.toMap)
+      val path = buildPathTo(pathEnd, backreferences.toMap)
+      if (path.head.from == pathStart && path.last.to == pathEnd)
+        path.size
+      else
+        Int.MaxValue
 
     override def toString: String =
       val verticesRepresentation = vertices.map(
@@ -129,9 +113,14 @@ object Day12:
     Graph(vertices, start, end)
 
   def solutionPart1(graph: Graph): Int =
-    val shortestPath = graph.findShortestPath(graph.start, graph.end)
-    println(shortestPath)
-    shortestPath.size
+    graph.shortestPathLength(graph.start, graph.end)
+
+  def solutionPart2(graph: Graph): Int =
+    val possibleStartVertices = graph.vertices.flatMap(_.filter(_.elevation == 0)).toList
+    println(s"In total ${possibleStartVertices.size} starting vertices")
+    val shortestPathLengthes = possibleStartVertices.map(graph.shortestPathLength(_, graph.end))
+    println(shortestPathLengthes)
+    shortestPathLengthes.min
 
 @main
 def day12Main: Unit =
@@ -139,3 +128,4 @@ def day12Main: Unit =
   import Day12Input._
   val parsed = parse(input)
   println(solutionPart1(parsed))
+  println(solutionPart2(parsed))
