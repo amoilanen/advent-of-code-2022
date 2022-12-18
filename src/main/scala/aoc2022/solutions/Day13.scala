@@ -1,6 +1,7 @@
 package aoc2022.solutions
 
 import scala.annotation.tailrec
+import aoc2022.solutions.common.ParsingUtils._
 
 object Day13:
 
@@ -81,7 +82,17 @@ object Day13:
     parsePacket(input.split("").filter(_.nonEmpty).toList, 0, List.empty, List())
 
   def parse(input: String): Seq[PacketPair] =
-    ???
+    val lines = input.split("\n").map(_.trim)
+    val lineGroups = splitBy("")(lines).filter(_.nonEmpty)
+    lineGroups.zipWithIndex.map({
+      case (List(left: String, right: String), index) =>
+        val leftPacket = parsePacket(left)
+        val rightPacket = parsePacket(right)
+        PacketPair(index + 1, leftPacket, rightPacket)
+    })
+
+  def solutionPart1(pairs: Seq[PacketPair]): Int =
+    pairs.filter(pair => pair.left.lowerThan(pair.right)).map(_.index).sum
 
 @main
 def day13Main: Unit =
@@ -89,4 +100,5 @@ def day13Main: Unit =
   import Day13Input._
   val parsed = parse(input)
   println(parsed)
+  println(solutionPart1(parsed))
 
