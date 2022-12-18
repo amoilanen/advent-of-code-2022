@@ -38,8 +38,13 @@ object Day13:
           false
       }
 
-  case class ListOf[A: Ordering](elements: List[Expression[A]]) extends Expression[A]
-  case class Element[A: Ordering](value: A) extends Expression[A]
+  case class ListOf[A: Ordering](elements: List[Expression[A]]) extends Expression[A]:
+    override def toString: String =
+      val elementsRepresentation = elements.map(_.toString).mkString(",")
+      s"[$elementsRepresentation]"
+  case class Element[A: Ordering](value: A) extends Expression[A]:
+    override def toString: String =
+      value.toString
 
   object Expression:
     def l[A: Ordering](elements: Expression[A]*): Expression[A] =
@@ -48,7 +53,8 @@ object Day13:
       Element[A](element)
 
   type Packet = Expression[Int]
-  case class PacketPair(index: Int, left: Packet, right: Packet)
+  case class PacketPair(index: Int, left: Packet, right: Packet):
+    val packets = List(left, right)
 
   @tailrec
   def parsePacket(input: List[String], position: Int, currentLists: List[ListOf[Int]], partialNumber: List[String]): Packet =
@@ -94,6 +100,14 @@ object Day13:
   def solutionPart1(pairs: Seq[PacketPair]): Int =
     pairs.filter(pair => pair.left.lowerThan(pair.right)).map(_.index).sum
 
+  val dividerPackets = List(parsePacket("[[2]]"), parsePacket("[[6]]"))
+
+  def solutionPart2(pairs: Seq[PacketPair]): Int =
+    val allPackets = pairs.flatMap(_.packets) ++ dividerPackets
+    val sortedPackets = allPackets.sortWith((x, y) => x.lowerThan(y))
+    val dividerPacketIndices = dividerPackets.map(sortedPackets.indexOf(_) + 1)
+    dividerPacketIndices.reduce(_ * _)
+
 @main
 def day13Main: Unit =
   import Day13._
@@ -101,4 +115,5 @@ def day13Main: Unit =
   val parsed = parse(input)
   println(parsed)
   println(solutionPart1(parsed))
+  println(solutionPart2(parsed))
 
