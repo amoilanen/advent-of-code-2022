@@ -17,6 +17,7 @@ object Day12:
 
   case class Edge(from: Vertex, to: Vertex):
     val length: Int = 1
+    val vertices = List(from, to)
 
   case class Graph(vertices: Array[Array[Vertex]], start: Vertex, end: Vertex):
     val allVertices = vertices.flatten
@@ -57,7 +58,7 @@ object Day12:
     /*
      * Implementation of the Dijkstra's algorithm https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm
      */
-    def shortestPathLength(pathStart: Vertex, pathEnd: Vertex): Int =
+    def shortestPathLength(pathStart: Vertex, pathEnd: Vertex): (Int, Map[Vertex, Int]) =
       val distances: MutableMap[Vertex, Int] = MutableMap.from(allVertices.map(_ -> Int.MaxValue).toList.toMap.updated(pathStart, 0))
       val backreferences: MutableMap[Vertex, Option[Vertex]] = MutableMap.from(allVertices.map(_ -> None).toList)
       var remainingVertices: List[Vertex] = allVertices.toList
@@ -66,6 +67,8 @@ object Day12:
         remainingVertices = remainingVertices.sortBy(distances(_))
         val currentClosestVertex = remainingVertices.head
         remainingVertices = remainingVertices.tail
+        if (distances(currentClosestVertex) == Int.MaxValue)
+          remainingVertices = List.empty
         if (currentClosestVertex == pathEnd)
           remainingVertices = List.empty
         else
@@ -78,10 +81,21 @@ object Day12:
           )
       val distanceToPathEnd = distances(pathEnd)
       val path = buildPathTo(pathEnd, backreferences.toMap)
-      if (path.head.from == pathStart && path.last.to == pathEnd)
-        path.size
+
+      /*
+       * Optimization to avoid re-computing shortest paths multiple times
+       */
+      distances(pathEnd) = 0
+      path.reverse.foreach(edge =>
+        distances(edge.from) = distances(edge.to) + edge.length
+      )
+      val pathVertices = pathStart +: path.map(_.to)
+      val otherShortestDistances: Map[Vertex, Int] = pathVertices.map(vertex => vertex -> distances(vertex)).toMap
+
+      if (path.headOption.isDefined && path.head.from == pathStart && path.last.to == pathEnd)
+        (path.size, otherShortestDistances)
       else
-        Int.MaxValue
+        (Int.MaxValue, otherShortestDistances)
 
     override def toString: String =
       val verticesRepresentation = vertices.map(
@@ -113,12 +127,21 @@ object Day12:
     Graph(vertices, start, end)
 
   def solutionPart1(graph: Graph): Int =
-    graph.shortestPathLength(graph.start, graph.end)
+    graph.shortestPathLength(graph.start, graph.end)._1
 
   def solutionPart2(graph: Graph): Int =
     val possibleStartVertices = graph.vertices.flatMap(_.filter(_.elevation == 0)).toList
     println(s"In total ${possibleStartVertices.size} starting vertices")
-    val shortestPathLengthes = possibleStartVertices.map(graph.shortestPathLength(_, graph.end))
+    var computedShortestPaths: Map[Vertex, Int] = Map.empty
+    val shortestPathLengthes = possibleStartVertices.zipWithIndex.map((start, index) =>
+      println(s"$index/${possibleStartVertices.size}")
+      if computedShortestPaths.contains(start) then
+        computedShortestPaths(start)
+      else
+        val (shortestPath, newComputedShortestPaths) = graph.shortestPathLength(start, graph.end)
+        computedShortestPaths = computedShortestPaths ++ newComputedShortestPaths
+        shortestPath
+    )
     println(shortestPathLengthes)
     shortestPathLengthes.min
 
