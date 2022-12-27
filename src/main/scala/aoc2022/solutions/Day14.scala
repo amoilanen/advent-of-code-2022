@@ -7,6 +7,9 @@ object Day14:
   case class SimulationState(rockTraces: List[RockTrace], stoppedSand: List[Point] = List(), freeFallingSand: Boolean = false):
     def isBlocked(p: Point): Boolean =
       stoppedSand.contains(p) || rockTraces.exists(_.contains(p))
+    def isBelowRockTraces(p: Point): Boolean =
+      rockTraces.forall(_.isBelow(p))
+
 
   case class Point(x: Int, y: Int):
     lazy val movesInPriorityOrder =
@@ -29,8 +32,11 @@ object Day14:
 
   case class RockTrace(points: List[Point]):
     val lines = points.zip(points.tail).map((start, end) => Line(start, end))
+    val maxY = points.map(_.y).max
     def contains(p: Point): Boolean =
       lines.exists(_.contains(p))
+    def isBelow(p: Point): Boolean =
+      p.y > maxY
 
   def parse(input: String): List[RockTrace] =
     val rockTraceInputs = input.split("\n").filter(_.nonEmpty).toList
@@ -45,9 +51,28 @@ object Day14:
   @tailrec
   def dropSand(state: SimulationState, fromPoint: Point): SimulationState =
     fromPoint.movesInPriorityOrder.find(!state.isBlocked(_)) match {
-      case Some(nextPoint) => dropSand(state, nextPoint)
+      case Some(nextPoint) =>
+        if state.isBelowRockTraces(nextPoint) then
+          state.copy(freeFallingSand = true)
+        else
+          dropSand(state, nextPoint)
       case None => state.copy(stoppedSand = state.stoppedSand :+ fromPoint)
     }
+
+  val SandDropStartPoint = Point(500, 0)
+
+  def solutionPart1(rockTraces: List[RockTrace]): Int =
+    @tailrec
+    def findStateInWhichSandFalls(state: SimulationState): SimulationState =
+      if state.freeFallingSand then
+        state
+      else
+        val nextState = dropSand(state, SandDropStartPoint)
+        findStateInWhichSandFalls(nextState)
+
+    val initialState = SimulationState(rockTraces)
+    val finalState = findStateInWhichSandFalls(initialState)
+    finalState.stoppedSand.size
 
 @main
 def day14Main: Unit =
@@ -55,3 +80,4 @@ def day14Main: Unit =
   import Day14Input._
   val parsed = parse(input)
   println(parsed)
+  println(solutionPart1(parsed))

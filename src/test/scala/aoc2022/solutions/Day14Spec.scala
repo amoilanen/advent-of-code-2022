@@ -33,6 +33,14 @@ class Day14Spec extends munit.FunSuite:
     assert(!rockTrace.contains(Point(1, 5)))
   }
 
+  test("RockTrace isBelow") {
+    val rockTrace = RockTrace(List(Point(2, 1), Point(2, 4), Point(7, 4)))
+    assert(rockTrace.isBelow(Point(3, 5)))
+    assert(rockTrace.isBelow(Point(1, 10)))
+    assert(!rockTrace.isBelow(Point(3, 4)))
+    assert(!rockTrace.isBelow(Point(3, 2)))
+  }
+
   test("SimulationState isBlocked") {
     val rockTraces = List(
       RockTrace(List(Point(2, 1), Point(2, 4), Point(7, 4))),
@@ -56,10 +64,28 @@ class Day14Spec extends munit.FunSuite:
     )
   }
 
-  test("dropSand: examples similar to examples from the task") {
-    //TODO:
+  test("dropSand: sand drops infinitely to the bottom") {
+    val state = SimulationState(List(RockTrace(List(Point(0, 10), Point(5, 10)))))
+    assertEquals(
+      dropSand(state, Point(6, 0)),
+      state.copy(freeFallingSand = true)
+    )
   }
 
-  test("dropSand: sand drops infinitely to the bottom") {
+  test("dropSand: examples similar to examples from the task") {
+    val rockTraces = List(
+      RockTrace(List(Point(498, 4), Point(498, 6), Point(496, 6))),
+      RockTrace(List(Point(503, 4), Point(502, 4), Point(502, 9), Point(494, 9)))
+    )
+    val state = SimulationState(rockTraces)
+    val stateAfterDrop1 = dropSand(state, Point(500, 0))
+    assertEquals(stateAfterDrop1, state.copy(stoppedSand = List(Point(500, 8))))
 
+    val stateAfterDrop2 = dropSand(stateAfterDrop1, Point(500, 0))
+    assertEquals(stateAfterDrop2, state.copy(stoppedSand = List(Point(500, 8), Point(499, 8))))
+
+    val stateAfterDrop5 = (1 to 3).foldLeft(stateAfterDrop2)((state, _) => dropSand(state, Point(500, 0)))
+    assertEquals(stateAfterDrop5, state.copy(
+      stoppedSand = List(Point(500, 8), Point(499, 8), Point(501, 8), Point(500, 7), Point(498, 8))
+    ))
   }
