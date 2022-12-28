@@ -10,42 +10,50 @@ object Day14:
     def isBelowRockTraces(p: Point): Boolean =
       rockTraces.forall(_.isBelow(p))
 
-
   case class Point(x: Int, y: Int):
     lazy val movesInPriorityOrder =
       List(Point(x, y + 1), Point(x - 1, y + 1), Point(x + 1, y + 1))
 
   case class Line(start: Point, end: Point):
-    private val minX = Math.min(start.x, end.x)
-    private val maxX = Math.max(start.x, end.x)
-    private val minY = Math.min(start.y, end.y)
-    private val maxY = Math.max(start.y, end.y)
     def contains(p: Point): Boolean =
       val Point(x1, y1) = start
       val Point(x2, y2) = end
       // Easy to check that start and end belong to the line with this equation => this is the equation of this line
       p.y * (x2 - x1) == p.x * (y2 - y1) + (y1 * x2 - y2 * x1)
-      &&
-        ((p.x >= minX) && (p.x <= maxX))
-      &&
-        ((p.y >= minY) && (p.y <= maxY))
 
-  case class RockTrace(points: List[Point]):
-    val lines = points.zip(points.tail).map((start, end) => Line(start, end))
+  case class LineSegment(start: Point, end: Point):
+    private val line: Line = Line(start, end)
+    private val xRange = Math.min(start.x, end.x) to Math.max(start.x, end.x)
+    private val yRange = Math.min(start.y, end.y) to Math.max(start.y, end.y)
+    def contains(p: Point): Boolean =
+      line.contains(p) && xRange.contains(p.x) && yRange.contains(p.y)
+
+  trait RockTrace:
+    def contains(p: Point): Boolean
+    def isBelow(p: Point): Boolean
+
+  case class FiniteRockTrace(points: List[Point]) extends RockTrace:
+    val lines = points.zip(points.tail).map((start, end) => LineSegment(start, end))
     val maxY = points.map(_.y).max
     def contains(p: Point): Boolean =
       lines.exists(_.contains(p))
     def isBelow(p: Point): Boolean =
       p.y > maxY
 
-  def parse(input: String): List[RockTrace] =
+  case class Floor(y: Int) extends RockTrace:
+    def contains(p: Point): Boolean =
+      p.y == y
+    def isBelow(p: Point): Boolean =
+      p.y > y
+
+  def parse(input: String): List[FiniteRockTrace] =
     val rockTraceInputs = input.split("\n").filter(_.nonEmpty).toList
     rockTraceInputs.map(traceInput =>
       val points = traceInput.split("->").map(_.trim).map(pointInput =>
         val Array(x, y) = pointInput.split(",")
         Point(x.toInt, y.toInt)
       ).toList
-      RockTrace(points)
+      FiniteRockTrace(points)
     )
 
   @tailrec
@@ -61,7 +69,7 @@ object Day14:
 
   val SandDropStartPoint = Point(500, 0)
 
-  def solutionPart1(rockTraces: List[RockTrace]): Int =
+  def solutionPart1(rockTraces: List[FiniteRockTrace]): Int =
     @tailrec
     def findStateInWhichSandFalls(state: SimulationState): SimulationState =
       if state.freeFallingSand then
@@ -74,6 +82,20 @@ object Day14:
     val finalState = findStateInWhichSandFalls(initialState)
     finalState.stoppedSand.size
 
+  def solutionPart2(rockTraces: List[FiniteRockTrace]): Int =
+    @tailrec
+    def findStateInWhichSandBlocksSource(state: SimulationState): SimulationState =
+      if state.stoppedSand.contains(SandDropStartPoint) then
+        state
+      else
+        val nextState = dropSand(state, SandDropStartPoint)
+        findStateInWhichSandBlocksSource(nextState)
+
+    val maxRockTraceY = rockTraces.flatMap(_.points).map(_.y).max
+    val initialState = SimulationState(rockTraces :+ Floor(maxRockTraceY + 2))
+    val finalState = findStateInWhichSandBlocksSource(initialState)
+    finalState.stoppedSand.size
+
 @main
 def day14Main: Unit =
   import Day14._
@@ -81,3 +103,4 @@ def day14Main: Unit =
   val parsed = parse(input)
   println(parsed)
   println(solutionPart1(parsed))
+  println(solutionPart2(parsed))
