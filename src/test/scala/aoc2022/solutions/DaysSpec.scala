@@ -121,3 +121,11 @@ class DaysSpec extends munit.FunSuite:
     assertEquals(solutionPart1(parsed), 24)
     assertEquals(solutionPart2(parsed), 93)
   }
+
+  test("Day 15") {
+    import Day15._
+    import Day15Input._
+    val parsed = parse(input)
+    assertEquals(solutionPart1(parsed), 26)
+    //assertEquals(solutionPart2(parsed), 93)
+  }
