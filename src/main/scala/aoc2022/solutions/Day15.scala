@@ -6,8 +6,8 @@ object Day15:
       Math.abs(x - other.x) + Math.abs(y - other.y)
 
   case class Sensor(position: Point, closestBeacon: Point):
+    lazy val radius = position.distanceTo(closestBeacon)
     def knownArea: Set[Point] =
-      val radius = position.distanceTo(closestBeacon)
       (-radius to radius).flatMap(rowOffset =>
         val sectionLength = radius - Math.abs(rowOffset)
         (-sectionLength to sectionLength).map(columnOffset =>
@@ -16,6 +16,16 @@ object Day15:
       ).toSet
     def beaconFreeArea: Set[Point] =
       knownArea.filterNot(_ == closestBeacon)
+
+    def beaconFreeAreaAtRow(row: Int): Set[Point] =
+      val verticalOffset = Math.abs(position.y - row)
+      if verticalOffset <= radius then
+        val sectionLength = radius - verticalOffset
+        (-sectionLength to sectionLength).map(columnOffset =>
+          Point(position.x + columnOffset, row)
+        ).toSet.filterNot(_ == closestBeacon)
+      else
+        Set()
 
   def parseSensorReading(input: String): Sensor =
     input match {
@@ -35,8 +45,9 @@ object Day15:
     )
 
   def sureBeaconFreePlacesInRow(sensors: Seq[Sensor], row: Int): Int =
-    val freeArea = commonBeaconFreeArea(sensors)
-    freeArea.filter(_.y == row).size
+    sensors.foldLeft(Set.empty[Point])((set, sensor) =>
+      set.union(sensor.beaconFreeAreaAtRow(row))
+    ).size
 
   def solutionPart1(parsedAndRowNumber: (Int, Seq[Sensor])): Int =
     sureBeaconFreePlacesInRow(parsedAndRowNumber._2, parsedAndRowNumber._1)
