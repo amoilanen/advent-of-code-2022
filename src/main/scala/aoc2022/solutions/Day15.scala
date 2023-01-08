@@ -5,6 +5,26 @@ object Day15:
     def distanceTo(other: Point): Int =
       Math.abs(x - other.x) + Math.abs(y - other.y)
 
+  case class HorizontalSegment(row: Int, start: Int, end: Int):
+    lazy val asPointSet: Set[Point] =
+      (start to end).map(Point(_, row)).toSet
+
+    def union(other: Set[HorizontalSegment]): Set[HorizontalSegment] =
+      /*
+       * Idea of the algorithm, s - current segment:
+       *  1. Find any first segment with which there is an intersection from the set of `other`, if none, then return union of sets
+       *  2. Compute a new segment which this intersection produces, s := this intersection,
+       *  3. Remove the segment found in 1. from `other`, go to step 1.
+       *
+       * Since there is a finite number of segments and on step 1 the number of segments gets reduced the algorithm will finish
+       * in a finite number of steps.
+       */
+      ???
+      //TODO: Implement the optimization for computing the union of lines, which might be a set of lines
+
+    def difference(lines: Set[HorizontalSegment]): Set[HorizontalSegment] =
+      ???
+
   case class Sensor(position: Point, closestBeacon: Point):
     lazy val radius = position.distanceTo(closestBeacon)
     def knownArea: Set[Point] =
@@ -14,18 +34,20 @@ object Day15:
           Point(position.x + columnOffset, position.y + rowOffset)
         )
       ).toSet
-    def beaconFreeArea: Set[Point] =
-      knownArea.filterNot(_ == closestBeacon)
 
     def beaconFreeAreaAtRow(row: Int): Set[Point] =
+      coverageAtRow(row) match {
+        case Some(line) => line.asPointSet.filterNot(_ == closestBeacon)
+        case None => Set()
+      }
+
+    def coverageAtRow(row: Int): Option[HorizontalSegment] =
       val verticalOffset = Math.abs(position.y - row)
       if verticalOffset <= radius then
         val sectionLength = radius - verticalOffset
-        (-sectionLength to sectionLength).map(columnOffset =>
-          Point(position.x + columnOffset, row)
-        ).toSet.filterNot(_ == closestBeacon)
+        Some(HorizontalSegment(row, position.x - sectionLength, position.x + sectionLength))
       else
-        Set()
+        None
 
   def parseSensorReading(input: String): Sensor =
     input match {
@@ -39,11 +61,6 @@ object Day15:
     val sensors = inputLines.drop(1).map(parseSensorReading)
     (row, sensors)
 
-  def commonBeaconFreeArea(sensors: Seq[Sensor]): Set[Point] =
-    sensors.foldLeft(Set())((set, sensor) =>
-      set.union(sensor.beaconFreeArea)
-    )
-
   def sureBeaconFreePlacesInRow(sensors: Seq[Sensor], row: Int): Int =
     sensors.foldLeft(Set.empty[Point])((set, sensor) =>
       set.union(sensor.beaconFreeAreaAtRow(row))
@@ -51,6 +68,8 @@ object Day15:
 
   def solutionPart1(parsedAndRowNumber: (Int, Seq[Sensor])): Int =
     sureBeaconFreePlacesInRow(parsedAndRowNumber._2, parsedAndRowNumber._1)
+
+  def solutionPart2(sensors: Seq[Sensor]): Int = ?
 
 @main
 def day15Main: Unit =
