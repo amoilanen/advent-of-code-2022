@@ -12,7 +12,9 @@ object Day15:
       (start to end).map(Point(_, row)).toSet
 
     def intersectsWith(other: HorizontalSegment): Boolean =
-      row == other.row && Seq(other.start, other.end).exists(x => x >= start && x <= end)
+      row == other.row && (
+        Seq(other.start, other.end).exists(x => x >= start && x <= end)
+          || ((other.start < this.start) && (this.end < other.end)))
 
     def mergeWith(other: HorizontalSegment): HorizontalSegment =
       if this.intersectsWith(other) then
@@ -31,16 +33,15 @@ object Day15:
        * Since there is a finite number of segments and on step 1 the number of segments gets reduced the algorithm will finish
        * in a finite number of steps.
        */
-      def unionOf(segment: HorizontalSegment, other: Set[HorizontalSegment]): Set[HorizontalSegment] =
-        val segmentWhichIntersects = other.find(segment => this.intersectsWith(segment))
-        segmentWhichIntersects match {
+      def unionOf(current: HorizontalSegment, other: Set[HorizontalSegment]): Set[HorizontalSegment] =
+        val segmentWhichIntersects = other.find(segment => current.intersectsWith(segment))
+        segmentWhichIntersects match
           case None =>
-            other + segment
+            other + current
           case Some(segment) =>
-            val merged = segment.mergeWith(segment)
+            val merged = current.mergeWith(segment)
             val remainingSegments = other.filterNot(_ == segment)
             unionOf(merged, remainingSegments)
-        }
       unionOf(this, other)
 
 
