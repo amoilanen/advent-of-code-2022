@@ -58,8 +58,53 @@ class Day15Spec extends munit.FunSuite:
     )
   }
 
-  //TODO: HorizontalSegment.union: intersects with two segments and unites them into a single segment
-  //TODO: HorizontalSegment.union: subsumes one of the existing segments
-  //TODO: HorizontalSegment.union: lies fully inside one of the existing segments
-  //TODO: HorizontalSegment.union: subsumes one of the existing segments and intesects with one of the other segments but does not match that segment
-  //TODO: HorizontalSegment.union: subsumes one of the existing segments and unites two other segments into one
+  test("HorizontalSegment.union: intersects with two segments and unites them into a single segment") {
+    val x = HorizontalSegment(3, 4, 10)
+    val s1 = HorizontalSegment(3, 2, 6)
+    val s2 = HorizontalSegment(3, 8, 12)
+    assertEquals(
+      x.union(Set(s1, s2)),
+      Set(HorizontalSegment(3, 2, 12))
+    )
+  }
+
+  test("HorizontalSegment.union: subsumes one of the existing segments") {
+    val x = HorizontalSegment(3, 4, 10)
+    val s1 = HorizontalSegment(3, 6, 8)
+    val s2 = HorizontalSegment(3, 12, 14)
+    assertEquals(
+      x.union(Set(s1, s2)),
+      Set(x, s2)
+    )
+  }
+
+  test("HorizontalSegment.union: lies fully inside one of the existing segments") {
+    val x = HorizontalSegment(3, 7, 9)
+    val s1 = HorizontalSegment(3, 6, 10)
+    val s2 = HorizontalSegment(3, 12, 14)
+    assertEquals(
+      x.union(Set(s1, s2)),
+      Set(s1, s2)
+    )
+  }
+
+  test("HorizontalSegment.union: subsumes one of the existing segments and intersects with one of the other segments but does not match that segment") {
+    val x = HorizontalSegment(3, 4, 13)
+    val s1 = HorizontalSegment(3, 6, 8)
+    val s2 = HorizontalSegment(3, 12, 14)
+    assertEquals(
+      x.union(Set(s1, s2)),
+      Set(HorizontalSegment(3, 4, 14))
+    )
+  }
+
+  test("HorizontalSegment.union: subsumes one of the existing segments and unites two other segments into one") {
+    val x = HorizontalSegment(3, 5, 13)
+    val s1 = HorizontalSegment(3, 2, 6)
+    val s2 = HorizontalSegment(3, 8, 10)
+    val s3 = HorizontalSegment(3, 12, 14)
+    assertEquals(
+      x.union(Set(s1, s2, s3)),
+      Set(HorizontalSegment(3, 2, 14))
+    )
+  }
