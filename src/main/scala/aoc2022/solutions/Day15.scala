@@ -8,8 +8,10 @@ object Day15:
       Math.abs(x - other.x) + Math.abs(y - other.y)
 
   case class HorizontalSegment(row: Int, start: Int, end: Int):
-    lazy val asPointSet: Set[Point] =
-      (start to end).map(Point(_, row)).toSet
+    val size = Math.abs(end - start + 1)
+
+    def contains(p: Point): Boolean =
+      p.y == row && p.x >= start && p.x <= end
 
     def intersectsWith(other: HorizontalSegment): Boolean =
       row == other.row && (
@@ -50,19 +52,6 @@ object Day15:
 
   case class Sensor(position: Point, closestBeacon: Point):
     lazy val radius = position.distanceTo(closestBeacon)
-    def knownArea: Set[Point] =
-      (-radius to radius).flatMap(rowOffset =>
-        val sectionLength = radius - Math.abs(rowOffset)
-        (-sectionLength to sectionLength).map(columnOffset =>
-          Point(position.x + columnOffset, position.y + rowOffset)
-        )
-      ).toSet
-
-    def beaconFreeAreaAtRow(row: Int): Set[Point] =
-      coverageAtRow(row) match {
-        case Some(line) => line.asPointSet.filterNot(_ == closestBeacon)
-        case None => Set()
-      }
 
     def coverageAtRow(row: Int): Option[HorizontalSegment] =
       val verticalOffset = Math.abs(position.y - row)
@@ -85,9 +74,13 @@ object Day15:
     (row, sensors)
 
   def sureBeaconFreePlacesInRow(sensors: Seq[Sensor], row: Int): Int =
-    sensors.foldLeft(Set.empty[Point])((set, sensor) =>
-      set.union(sensor.beaconFreeAreaAtRow(row))
-    ).size
+    val horizontalSegments = sensors.foldLeft(Set.empty[HorizontalSegment])((set, sensor) =>
+      sensor.coverageAtRow(row).map(_.union(set)).getOrElse(set)
+    )
+    val coveredBySensors = horizontalSegments.map(_.size).sum
+    val beaconsCovered = sensors.map(_.closestBeacon).toSet.filter(beacon =>
+      horizontalSegments.exists(_.contains(beacon))).size
+    coveredBySensors - beaconsCovered
 
   def solutionPart1(parsedAndRowNumber: (Int, Seq[Sensor])): Int =
     sureBeaconFreePlacesInRow(parsedAndRowNumber._2, parsedAndRowNumber._1)
