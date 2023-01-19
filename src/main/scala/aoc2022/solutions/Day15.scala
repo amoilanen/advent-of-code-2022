@@ -46,9 +46,32 @@ object Day15:
             unionOf(merged, remainingSegments)
       unionOf(this, other)
 
+    enum Direction:
+      case Left, Right
+    case class HorizontalSegmentEnd(x: Int, direction: Direction)
 
-    def difference(lines: Set[HorizontalSegment]): Set[HorizontalSegment] =
-      ???
+    def difference(other: Set[HorizontalSegment]): Set[HorizontalSegment] =
+      // Initial implementation
+      // TODO: Re-factor the implementation, debug, handle corner cases
+      val segmentEnds = other.toList.flatMap(segment =>
+        val HorizontalSegment(_, left, right) = segment
+        List(HorizontalSegmentEnd(left, Direction.Left), HorizontalSegmentEnd(right, Direction.Right))
+      ).sortBy(_.x)
+      val fullSegmentEnds = segmentEnds.zip(segmentEnds.tail).map(pair => List(pair._1, pair._2)).flatMap(group =>
+        group match
+          case List(HorizontalSegmentEnd(first, Direction.Left), HorizontalSegmentEnd(second, Direction.Left)) =>
+            group :+ HorizontalSegmentEnd(second - 1, Direction.Right)
+          case List(HorizontalSegmentEnd(first, Direction.Right), HorizontalSegmentEnd(second, Direction.Right)) =>
+            group :+ HorizontalSegmentEnd(second - 1, Direction.Left)
+          case _ =>
+            group
+      ).toSet.toList.sortBy(_.x)
+
+      val possibleSegments = fullSegmentEnds.zip(fullSegmentEnds.tail).map(pair => HorizontalSegment(row, pair._1.x, pair._2.x))
+      val remainingSegments = possibleSegments.filter(segment =>
+        !other.exists(_.contains(Point(row, segment.start)))
+      )
+      remainingSegments.toSet
 
   case class Sensor(position: Point, closestBeacon: Point):
     lazy val radius = position.distanceTo(closestBeacon)
@@ -83,9 +106,12 @@ object Day15:
     coveredBySensors - beaconsCovered
 
   def solutionPart1(parsedAndRowNumber: (Int, Seq[Sensor])): Int =
+    val (rowNumber, sensors) = parsedAndRowNumber
     sureBeaconFreePlacesInRow(parsedAndRowNumber._2, parsedAndRowNumber._1)
 
-  def solutionPart2(sensors: Seq[Sensor]): Int =
+  def solutionPart2(parsedAndRowNumber: (Int, Seq[Sensor])): Int =
+    val (rowNumber, sensors) = parsedAndRowNumber
+    val possibleRange = rowNumber * 2
     ???
 
 @main

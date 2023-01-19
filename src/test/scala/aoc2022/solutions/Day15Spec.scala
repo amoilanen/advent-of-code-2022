@@ -94,3 +94,30 @@ class Day15Spec extends munit.FunSuite:
       Set(HorizontalSegment(3, 2, 14))
     )
   }
+
+  test("HorizontalSegment.difference: all segments are contained within") {
+    val x = HorizontalSegment(3, 2, 12)
+    assertEquals(
+      x.difference(Set(HorizontalSegment(3, 4, 6), HorizontalSegment(3, 8, 10))),
+      Set(HorizontalSegment(3, 2, 3), HorizontalSegment(3, 7, 7), HorizontalSegment(3, 11, 12))
+    )
+  }
+
+  test("HorizontalSegment.difference: intersecting with one segment") {
+    val x = HorizontalSegment(3, 2, 12)
+    assertEquals(
+      x.difference(Set(HorizontalSegment(3, -1, 5))),
+      Set(HorizontalSegment(3, 6, 12))
+    )
+  }
+
+  test("HorizontalSegment.difference: subtracting segment from another row") {
+    val x = HorizontalSegment(3, 2, 12)
+    assertEquals(
+      x.difference(Set(HorizontalSegment(2, 4, 8))),
+      Set(HorizontalSegment(3, 2, 12))
+    )
+  }
+
+  // TODO: Subtructing intersecting segments
+  // TODO: Subtructing an empty set of segments
