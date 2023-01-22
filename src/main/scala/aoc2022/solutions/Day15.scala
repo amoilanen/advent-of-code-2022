@@ -13,6 +13,9 @@ object Day15:
     def contains(p: Point): Boolean =
       p.y == row && p.x >= start && p.x <= end
 
+    lazy val isEmpty: Boolean =
+      start > end
+
     def intersectsWith(other: HorizontalSegment): Boolean =
       row == other.row && (
         Seq(other.start, other.end).exists(x => x >= start && x <= end)
@@ -51,25 +54,33 @@ object Day15:
     case class HorizontalSegmentEnd(x: Int, direction: Direction)
 
     def difference(other: Set[HorizontalSegment]): Set[HorizontalSegment] =
-      // Initial implementation
-      // TODO: Re-factor the implementation, debug, handle corner cases
-      val segmentEnds = other.toList.flatMap(segment =>
+      // TODO: Re-factor the implementation, handle corner cases
+      val sameRowOther = other.filter(_.row == row)
+      val segmentEnds = (sameRowOther + this).toList.flatMap(segment =>
         val HorizontalSegment(_, left, right) = segment
         List(HorizontalSegmentEnd(left, Direction.Left), HorizontalSegmentEnd(right, Direction.Right))
       ).sortBy(_.x)
-      val fullSegmentEnds = segmentEnds.zip(segmentEnds.tail).map(pair => List(pair._1, pair._2)).flatMap(group =>
+      val segmentEndPairs = segmentEnds.zip(segmentEnds.tail).map((left, right) =>
+        List(left, right)
+      )
+      val fullSegmentEnds = segmentEndPairs.flatMap(group =>
         group match
-          case List(HorizontalSegmentEnd(first, Direction.Left), HorizontalSegmentEnd(second, Direction.Left)) =>
+          case List(HorizontalSegmentEnd(first, Direction.Left), HorizontalSegmentEnd(second, Direction.Left)) if first + 1 < second =>
             group :+ HorizontalSegmentEnd(second - 1, Direction.Right)
-          case List(HorizontalSegmentEnd(first, Direction.Right), HorizontalSegmentEnd(second, Direction.Right)) =>
-            group :+ HorizontalSegmentEnd(second - 1, Direction.Left)
+          case List(HorizontalSegmentEnd(first, Direction.Right), HorizontalSegmentEnd(second, Direction.Right)) if first + 1 < second =>
+            group :+ HorizontalSegmentEnd(first + 1, Direction.Left)
+          case List(HorizontalSegmentEnd(first, Direction.Right), HorizontalSegmentEnd(second, Direction.Left)) if first + 1 < second =>
+            group ++ List(HorizontalSegmentEnd(first + 1, Direction.Left), HorizontalSegmentEnd(second - 1, Direction.Right))
           case _ =>
             group
       ).toSet.toList.sortBy(_.x)
 
-      val possibleSegments = fullSegmentEnds.zip(fullSegmentEnds.tail).map(pair => HorizontalSegment(row, pair._1.x, pair._2.x))
+      val possibleSegments = fullSegmentEnds.grouped(2).map(endsPair =>
+        val Seq(left, right) = endsPair
+        HorizontalSegment(row, left.x, right.x)).filter(!_.isEmpty).toList
+
       val remainingSegments = possibleSegments.filter(segment =>
-        !other.exists(_.contains(Point(row, segment.start)))
+        !sameRowOther.exists(_.contains(Point(segment.start, row)))
       )
       remainingSegments.toSet
 
