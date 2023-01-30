@@ -156,11 +156,11 @@ object Day15:
 
   val TuningFrequency = 4000000
 
-  def solutionPart2(parsedAndRowNumber: (Int, Seq[Sensor])): Int =
+  def solutionPart2(parsedAndRowNumber: (Int, Seq[Sensor])): Long =
     val (rowNumber, sensors) = parsedAndRowNumber
     val possibleBeaconPositions = findPossibleBeaconPositions(rowNumber, sensors)
     val beaconPosition = possibleBeaconPositions.head
-    beaconPosition.x * TuningFrequency + beaconPosition.y
+    beaconPosition.x.toLong * TuningFrequency.toLong + beaconPosition.y.toLong
 
 @main
 def day15Main: Unit =
