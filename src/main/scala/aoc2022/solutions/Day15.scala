@@ -1,6 +1,7 @@
 package aoc2022.solutions
 
 import scala.annotation.tailrec
+import scala.util.control.NonFatal
 
 object Day15:
   case class Point(x: Int, y: Int):
@@ -9,6 +10,8 @@ object Day15:
 
   case class HorizontalSegment(row: Int, start: Int, end: Int):
     val size = Math.abs(end - start + 1)
+
+    lazy val points: Seq[Point] = (start to end).toList.map(Point(_, row))
 
     def contains(p: Point): Boolean =
       p.y == row && p.x >= start && p.x <= end
@@ -20,6 +23,18 @@ object Day15:
       row == other.row && (
         Seq(other.start, other.end).exists(x => x >= start && x <= end)
           || ((other.start < this.start) && (this.end < other.end)))
+
+    def intersection(other: HorizontalSegment): Option[HorizontalSegment] =
+      if intersectsWith(other) then
+        Some(
+          other.copy(
+            row,
+            start = Math.max(this.start, other.start),
+            end = Math.min(this.end, other.end)
+          )
+        )
+      else
+        None
 
     def mergeWith(other: HorizontalSegment): HorizontalSegment =
       if this.intersectsWith(other) then
@@ -54,8 +69,7 @@ object Day15:
     case class HorizontalSegmentEnd(x: Int, direction: Direction)
 
     def difference(other: Set[HorizontalSegment]): Set[HorizontalSegment] =
-      // TODO: Re-factor the implementation, handle corner cases
-      val sameRowOther = other.filter(_.row == row)
+      val sameRowOther = other.map(_.intersection(this)).flatten
       val segmentEnds = (sameRowOther + this).toList.flatMap(segment =>
         val HorizontalSegment(_, left, right) = segment
         List(HorizontalSegmentEnd(left, Direction.Left), HorizontalSegmentEnd(right, Direction.Right))
@@ -76,8 +90,14 @@ object Day15:
       ).toSet.toList.sortBy(_.x)
 
       val possibleSegments = fullSegmentEnds.grouped(2).map(endsPair =>
-        val Seq(left, right) = endsPair
-        HorizontalSegment(row, left.x, right.x)).filter(!_.isEmpty).toList
+        try
+          val Seq(left, right) = endsPair
+          HorizontalSegment(row, left.x, right.x)
+        catch
+          case NonFatal(e) =>
+            println(e)
+            throw e
+      ).filter(!_.isEmpty).toList
 
       val remainingSegments = possibleSegments.filter(segment =>
         !sameRowOther.exists(_.contains(Point(segment.start, row)))
@@ -118,12 +138,29 @@ object Day15:
 
   def solutionPart1(parsedAndRowNumber: (Int, Seq[Sensor])): Int =
     val (rowNumber, sensors) = parsedAndRowNumber
-    sureBeaconFreePlacesInRow(parsedAndRowNumber._2, parsedAndRowNumber._1)
+    sureBeaconFreePlacesInRow(sensors, rowNumber)
+
+  def findPossibleBeaconPositions(rowNumber: Int, sensors: Seq[Sensor]): Set[Point] =
+    val possibleRange = rowNumber * 2
+    (0 to possibleRange).toSet.map(row =>
+      val possibleSegment = HorizontalSegment(row, 0, possibleRange)
+      val horizontalSegments = sensors.foldLeft(Set.empty[HorizontalSegment])((set, sensor) =>
+        sensor.coverageAtRow(row).map(_.union(set)).getOrElse(set)
+      )
+      val possibleBeaconLocations = possibleSegment.difference(horizontalSegments)
+      if possibleBeaconLocations.isEmpty then
+        Set()
+      else
+        possibleBeaconLocations.flatMap(_.points)
+    ).flatten
+
+  val TuningFrequency = 4000000
 
   def solutionPart2(parsedAndRowNumber: (Int, Seq[Sensor])): Int =
     val (rowNumber, sensors) = parsedAndRowNumber
-    val possibleRange = rowNumber * 2
-    ???
+    val possibleBeaconPositions = findPossibleBeaconPositions(rowNumber, sensors)
+    val beaconPosition = possibleBeaconPositions.head
+    beaconPosition.x * TuningFrequency + beaconPosition.y
 
 @main
 def day15Main: Unit =
@@ -132,3 +169,4 @@ def day15Main: Unit =
   val parsed = parse(input)
   println(parsed)
   println(solutionPart1(parsed))
+  println(solutionPart2(parsed))
