@@ -1,8 +1,9 @@
 package aoc2022.solutions
 
-import aoc2022.solutions.Day12.Vertex
+import aoc2022.solutions.Day12.{Vertex, solutionPart2}
 import aoc2022.solutions.common.ParsingUtils.ParsingError
-import scala.collection.mutable.{ Map => MutableMap }
+
+import scala.collection.mutable.Map as MutableMap
 
 object Day16:
 
@@ -24,54 +25,70 @@ object Day16:
   def parse(input: String): Seq[Valve] =
     input.split("\n").map(_.trim).filter(_.nonEmpty).map(parseValve).toSeq
 
-  case class ValveMaxPressureAndOpenValves(pressure: Int, openValves: Set[ValveId])
+  case class ValveAchievedPressureAndOpenValves(pressure: Int, openValves: Set[ValveId])
 
-  def findGreatestPressure(valves: Seq[Valve], totalMoveNumber: Int): Int =
+  def findGreatestPressure(startValveId: ValveId, valves: Seq[Valve], totalMinutes: Int): Int =
     // Partially computed max possible pressures and the sets of open valves for each valve
-    val state: MutableMap[ValveId, MutableMap[Int, ValveMaxPressureAndOpenValves]] = MutableMap.empty
+    val state: MutableMap[ValveId, MutableMap[Int, ValveAchievedPressureAndOpenValves]] = MutableMap.empty
+
     valves.foreach(valve =>
-      state(valve.id) = MutableMap.from(Map(totalMoveNumber -> ValveMaxPressureAndOpenValves(0, Set.empty)))
+      state(valve.id) = MutableMap.from(Map.empty)
     )
+    state(startValveId) = MutableMap.from(Map(totalMinutes -> ValveAchievedPressureAndOpenValves(0, Set.empty)))
 
-    def improveNextValveAchievedPressures(updatedMoveNumber: Int, updatedPressure: Int, updatedOpenValves: Set[ValveId], nextValveIds: Seq[ValveId]): Unit =
-      nextValveIds.foreach(nextValveId =>
-        val nextValveState = state(nextValveId)
-        if nextValveState.contains(updatedMoveNumber) then
-          val currentNextValveBestPressure = nextValveState(updatedMoveNumber)
-          if currentNextValveBestPressure.pressure < updatedPressure then
-            nextValveState(updatedMoveNumber) = ValveMaxPressureAndOpenValves(updatedPressure, updatedOpenValves)
-        else
-          nextValveState(updatedMoveNumber) = ValveMaxPressureAndOpenValves(updatedPressure, updatedOpenValves)
-      )
+    def improveNextValveAchievedPressures(updatedRemainingMinutes: Int, updatedNextValveEstimate: ValveAchievedPressureAndOpenValves, nextValveIds: Seq[ValveId]): Unit =
+      if updatedRemainingMinutes >= 0 then
+        nextValveIds.foreach(nextValveId =>
+          val nextValveState = state(nextValveId)
+          nextValveState.get(updatedRemainingMinutes) match
+            case Some(currentNextValveEstimate) =>
+              if currentNextValveEstimate.pressure < updatedNextValveEstimate.pressure then
+                nextValveState(updatedRemainingMinutes) = updatedNextValveEstimate
+            case None =>
+              nextValveState(updatedRemainingMinutes) = updatedNextValveEstimate
+        )
 
-    (1 to totalMoveNumber).foreach(_ =>
+    (1 to totalMinutes).foreach(_ =>
       valves.foreach(valve =>
         val valveState = state(valve.id)
-        valveState.foreach({ case (moveNumber, ValveMaxPressureAndOpenValves(pressure, openValves)) =>
-          val nextValveIds = valve.connections
+        valveState.foreach({ case (remainingMinutes, ValveAchievedPressureAndOpenValves(pressure, openValves)) =>
           // First compute the improved estimates for the case when the current valve is open (if it is not already open)
-          if !openValves.contains(valve.id) then
-            val pressureIncreasedIfTurnedOn = (moveNumber - 1) * valve.rate // the pressure the current open valve will release until the moves end
+          if !openValves.contains(valve.id) && valve.rate > 0 then
+            val pressureIncreasedIfTurnedOn = (remainingMinutes - 1) * valve.rate // the pressure the current open valve will release until the moves end
             improveNextValveAchievedPressures(
-              updatedMoveNumber = moveNumber - 2, // 1 move to open the current valve + 1 move to move to another valve
-              updatedPressure = pressure + pressureIncreasedIfTurnedOn,
-              updatedOpenValves = openValves + valve.id,
-              nextValveIds = nextValveIds
+              updatedRemainingMinutes = remainingMinutes - 2, // 1 move to open the current valve + 1 move to move to another valve
+              updatedNextValveEstimate = ValveAchievedPressureAndOpenValves(
+                pressure = pressure + pressureIncreasedIfTurnedOn,
+                openValves = openValves + valve.id
+              ),
+              nextValveIds = valve.connections
             )
           // Compute the improved estimates for the case when the current valve is not open
           improveNextValveAchievedPressures(
-            updatedMoveNumber = moveNumber - 1, // 1 move to move to another valve
-            updatedPressure = pressure,
-            updatedOpenValves = openValves,
-            nextValveIds = nextValveIds
+            updatedRemainingMinutes = remainingMinutes - 1, // 1 move to move to another valve
+            updatedNextValveEstimate = ValveAchievedPressureAndOpenValves(
+              pressure,
+              openValves
+            ),
+            nextValveIds = valve.connections
           )
         })
       )
     )
 
-    //TODO: Iterate through the valve states and see whether some valves contain move number 0 and what would be the best possible estimate
-    //among all those achieved 0s
-    ???
+    val achievedMaxPressures = state.values.flatMap(_.filter({ case (moveNumber, _) =>
+      moveNumber == 0
+    })).map({ case (_, valveEstimate) =>
+      //println(valveEstimate.pressure + ": " + valveEstimate.openValves)
+      valveEstimate.pressure
+    })
+    achievedMaxPressures.max
+
+  val StartValveId = ValveId("AA")
+  val TotalMoveNumber = 30
+
+  def solutionPart1(valves: Seq[Valve]): Int =
+    findGreatestPressure(StartValveId, valves, TotalMoveNumber)
 
 @main
 def day16Main: Unit =
@@ -80,3 +97,7 @@ def day16Main: Unit =
   println("Day16")
   val parsed = parse(input)
   println(parsed)
+  println(solutionPart1(parsed))
+
+  val expectedAnswer = 20 * 28 + 13 * 25 + 21 * 21 + 22 * 13 + 3 * 9 + 2 * 6
+  println(expectedAnswer)
