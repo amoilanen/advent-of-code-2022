@@ -25,7 +25,7 @@ object Day16:
   def parse(input: String): Seq[Valve] =
     input.split("\n").map(_.trim).filter(_.nonEmpty).map(parseValve).toSeq
 
-  case class ValveAchievedPressureAndOpenValves(pressure: Int, openValves: Set[ValveId])
+  case class ValveAchievedPressureAndOpenValves(pressure: Int, openValves: Set[ValveId], openMinutes: Map[ValveId, Int])
 
   def findGreatestPressure(startValveId: ValveId, valves: Seq[Valve], totalMinutes: Int): Int =
     // Partially computed max possible pressures and the sets of open valves for each valve
@@ -34,7 +34,7 @@ object Day16:
     valves.foreach(valve =>
       state(valve.id) = MutableMap.from(Map.empty)
     )
-    state(startValveId) = MutableMap.from(Map(totalMinutes -> ValveAchievedPressureAndOpenValves(0, Set.empty)))
+    state(startValveId) = MutableMap.from(Map(totalMinutes -> ValveAchievedPressureAndOpenValves(0, Set.empty, Map.empty)))
 
     def improveNextValveAchievedPressures(updatedRemainingMinutes: Int, updatedNextValveEstimate: ValveAchievedPressureAndOpenValves, nextValveIds: Seq[ValveId]): Unit =
       if updatedRemainingMinutes >= 0 then
@@ -48,10 +48,11 @@ object Day16:
               nextValveState(updatedRemainingMinutes) = updatedNextValveEstimate
         )
 
+    //FIXME: Bug in the algorithm: we should consider to open or not the valve *at the same* time when updating its state, not after that how in the current algorithm
     (1 to totalMinutes).foreach(_ =>
       valves.foreach(valve =>
         val valveState = state(valve.id)
-        valveState.foreach({ case (remainingMinutes, ValveAchievedPressureAndOpenValves(pressure, openValves)) =>
+        valveState.foreach({ case (remainingMinutes, ValveAchievedPressureAndOpenValves(pressure, openValves, openMinutes)) =>
           // First compute the improved estimates for the case when the current valve is open (if it is not already open)
           if !openValves.contains(valve.id) && valve.rate > 0 then
             val pressureIncreasedIfTurnedOn = (remainingMinutes - 1) * valve.rate // the pressure the current open valve will release until the moves end
@@ -59,7 +60,8 @@ object Day16:
               updatedRemainingMinutes = remainingMinutes - 2, // 1 move to open the current valve + 1 move to move to another valve
               updatedNextValveEstimate = ValveAchievedPressureAndOpenValves(
                 pressure = pressure + pressureIncreasedIfTurnedOn,
-                openValves = openValves + valve.id
+                openValves = openValves + valve.id,
+                openMinutes.updated(valve.id, remainingMinutes - 1)
               ),
               nextValveIds = valve.connections
             )
@@ -68,7 +70,8 @@ object Day16:
             updatedRemainingMinutes = remainingMinutes - 1, // 1 move to move to another valve
             updatedNextValveEstimate = ValveAchievedPressureAndOpenValves(
               pressure,
-              openValves
+              openValves,
+              openMinutes
             ),
             nextValveIds = valve.connections
           )
@@ -77,9 +80,9 @@ object Day16:
     )
 
     val achievedMaxPressures = state.values.flatMap(_.filter({ case (moveNumber, _) =>
-      moveNumber == 0
+      moveNumber == 0 // || moveNumber == -1
     })).map({ case (_, valveEstimate) =>
-      //println(valveEstimate.pressure + ": " + valveEstimate.openValves)
+      println(valveEstimate.pressure + ": " + valveEstimate.openMinutes)
       valveEstimate.pressure
     })
     achievedMaxPressures.max
