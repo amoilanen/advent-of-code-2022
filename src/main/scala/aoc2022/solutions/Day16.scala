@@ -25,66 +25,34 @@ object Day16:
   def parse(input: String): Seq[Valve] =
     input.split("\n").map(_.trim).filter(_.nonEmpty).map(parseValve).toSeq
 
-  case class ValveAchievedPressureAndOpenValves(pressure: Int, openValves: Set[ValveId], openMinutes: Map[ValveId, Int])
+  def findShortestPaths(valves: Seq[Valve]): Map[(ValveId, ValveId), Int] =
+    val distances = MutableMap.from(Map.empty[(ValveId, ValveId), Int])
+    val valveIds = valves.map(_.id)
+    for
+      from <- valveIds
+      to <- valveIds
+    yield
+      distances.put((from, to), Int.MaxValue / 3)
+    for
+      from <- valveIds
+    yield
+      distances.put((from, from), 0)
+    for
+      from <- valves
+      to <- from.connections
+    yield
+      distances.put((from.id, to), 1)
+    for
+      through <- valveIds
+      from <- valveIds
+      to <- valveIds
+    yield
+      if distances((from, to)) > distances((from, through)) + distances((through, to)) then
+        distances((from, to)) = distances((from, through)) + distances((through, to))
+    distances.toMap
 
   def findGreatestPressure(startValveId: ValveId, valves: Seq[Valve], totalMinutes: Int): Int =
-    // Partially computed max possible pressures and the sets of open valves for each valve
-    val state: MutableMap[ValveId, MutableMap[Int, ValveAchievedPressureAndOpenValves]] = MutableMap.empty
-    val valveIdsToValve: Map[ValveId, Valve] = valves.map(valve => valve.id -> valve).toMap
-    valves.foreach(valve =>
-      state(valve.id) = MutableMap.from(Map.empty)
-    )
-
-    def updateAchievedValvePressures(valve: Valve, remainingMinutes: Int, achievedPressure: ValveAchievedPressureAndOpenValves): Unit =
-      val ValveAchievedPressureAndOpenValves(pressure, openValves, openMinutes) = achievedPressure
-      val valveState = state(valve.id)
-
-      // Current valve is opened
-      if !openValves.contains(valve.id) && valve.rate > 0 then
-        val updatedRemainingMinutes = remainingMinutes - 1
-        val pressureIncreasedIfTurnedOn = updatedRemainingMinutes * valve.rate
-        val updatedAchievedPressure = achievedPressure.copy(
-          pressure = pressure + pressureIncreasedIfTurnedOn,
-          openValves = openValves + valve.id,
-          openMinutes = openMinutes.updated(valve.id, updatedRemainingMinutes)
-        )
-        valveState.get(remainingMinutes - 1) match
-          case Some(currentEstimate) =>
-            if currentEstimate.pressure < updatedAchievedPressure.pressure then
-              valveState(updatedRemainingMinutes) = updatedAchievedPressure
-          case None =>
-            valveState(updatedRemainingMinutes) = updatedAchievedPressure
-
-      // Current valve is not opened
-      valveState.get(remainingMinutes) match
-        case Some(currentEstimate) =>
-          if currentEstimate.pressure < achievedPressure.pressure then
-            valveState(remainingMinutes) = achievedPressure
-        case None =>
-          valveState(remainingMinutes) = achievedPressure
-
-    val startValve = valveIdsToValve(startValveId)
-    updateAchievedValvePressures(startValve, totalMinutes, ValveAchievedPressureAndOpenValves(0, Set.empty, Map.empty))
-
-    (1 to totalMinutes).foreach(_ =>
-      valves.foreach(valve =>
-        val valveState = state(valve.id)
-        valveState.foreach({ case (remainingMinutes, achievedPressureEstimate) =>
-          valve.connections.foreach(nextValveId =>
-            val nextValve = valveIdsToValve(nextValveId)
-            updateAchievedValvePressures(nextValve, remainingMinutes - 1, achievedPressureEstimate)
-          )
-        })
-      )
-    )
-
-    val achievedMaxPressures = state.values.flatMap(_.filter({ case (moveNumber, _) =>
-      moveNumber == 0
-    })).map({ case (_, valveEstimate) =>
-      println(valveEstimate.pressure + ": " + valveEstimate.openMinutes)
-      valveEstimate.pressure
-    })
-    achievedMaxPressures.max
+    ???
 
   val StartValveId = ValveId("AA")
   val TotalMoveNumber = 30
@@ -99,7 +67,4 @@ def day16Main: Unit =
   println("Day16")
   val parsed = parse(input)
   println(parsed)
-  println(solutionPart1(parsed))
-
-  val expectedAnswer = 20 * 28 + 13 * 25 + 21 * 21 + 22 * 13 + 3 * 9 + 2 * 6
-  println(expectedAnswer)
+  //println(solutionPart1(parsed))
