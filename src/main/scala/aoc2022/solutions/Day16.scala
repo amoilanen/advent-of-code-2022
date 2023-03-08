@@ -51,14 +51,38 @@ object Day16:
         distances((from, to)) = distances((from, through)) + distances((through, to))
     distances.toMap
 
-  def findGreatestPressure(startValveId: ValveId, valves: Seq[Valve], totalMinutes: Int): Int =
-    ???
+  def findGreatestPressure(startValve: Valve, valves: Seq[Valve], totalMinutes: Int): Int =
+    val nonZeroRateValves: Set[Valve] = valves.filter(_.rate > 0).toSet
+    val shortestPaths: Map[(ValveId, ValveId), Int] = findShortestPaths(valves)
+    def maxReleasedPressure(currentValve: Valve, remainingValvesToOpen: Set[Valve], pressureReleasedSoFar: Int, remainingMinutes: Int): Int =
+      if remainingMinutes > 0 && remainingValvesToOpen.nonEmpty then
+        val updatedPressureReleasedSoFar = if currentValve.rate > 0 then
+          pressureReleasedSoFar + currentValve.rate * (remainingMinutes - 1)
+        else
+          pressureReleasedSoFar
+        val possibleReleasedPressures = remainingValvesToOpen.map(nextValve =>
+          val minutesToMove = shortestPaths.get((currentValve.id, nextValve.id)).getOrElse(Int.MaxValue)
+          val updatedRemainingMinutes =
+            if currentValve.rate > 0 then
+              remainingMinutes - 1 - minutesToMove
+            else
+              remainingMinutes - minutesToMove
+          val updatedRemainingValves = remainingValvesToOpen.filter(_ != nextValve)
+          maxReleasedPressure(nextValve, updatedRemainingValves, updatedPressureReleasedSoFar, updatedRemainingMinutes)
+        )
+        possibleReleasedPressures.max
+      else
+        pressureReleasedSoFar
+    maxReleasedPressure(startValve, nonZeroRateValves, 0, totalMinutes)
 
   val StartValveId = ValveId("AA")
   val TotalMoveNumber = 30
 
   def solutionPart1(valves: Seq[Valve]): Int =
-    findGreatestPressure(StartValveId, valves, TotalMoveNumber)
+    valves.find(_.id == StartValveId) match
+      case None => throw new IllegalStateException(s"Could not find start valve $StartValveId")
+      case Some(startValve) =>
+        findGreatestPressure(startValve, valves, TotalMoveNumber)
 
 @main
 def day16Main: Unit =
@@ -67,4 +91,4 @@ def day16Main: Unit =
   println("Day16")
   val parsed = parse(input)
   println(parsed)
-  //println(solutionPart1(parsed))
+  println(solutionPart1(parsed))
