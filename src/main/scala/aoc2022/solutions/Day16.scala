@@ -59,28 +59,20 @@ object Day16:
     ).toSet
     val shortestPaths: Map[(ValveId, ValveId), Int] = findShortestPaths(valves)
 
-    //TODO: The rate of nextValve is though always > 0?
-    def maxReleasedPressure(currentValve: Valve, remainingValvesToOpen: Set[Valve], pressureReleasedSoFar: Int, currentMinute: Int): Int =
-      if currentMinute < totalMinutes && remainingValvesToOpen.nonEmpty then
+    def maxReleasedPressure(currentValve: Valve, remainingValvesToOpen: Set[Valve], pressureReleasedSoFar: Int, remainingMinutes: Int): Int =
+      if remainingMinutes > 0 && remainingValvesToOpen.nonEmpty then
         val possibleReleasedPressures = remainingValvesToOpen.map(nextValve =>
           val minutesToMove = shortestPaths((currentValve.id, nextValve.id))
-          val updatedPressureReleasedSoFar = if nextValve.rate > 0 then
-            pressureReleasedSoFar + nextValve.rate * (totalMinutes - currentMinute - minutesToMove)
-          else
-            pressureReleasedSoFar
-          val updatedCurrentMinute =
-            if nextValve.rate > 0 then
-              currentMinute + 1 + minutesToMove
-            else
-              currentMinute + minutesToMove
+          val updatedPressureReleasedSoFar = pressureReleasedSoFar + nextValve.rate * (remainingMinutes - minutesToMove - 1)
+          val updatedRemainingMinutes = remainingMinutes - minutesToMove - 1
           val updatedRemainingValves = remainingValvesToOpen - nextValve
-          maxReleasedPressure(nextValve, updatedRemainingValves, updatedPressureReleasedSoFar, updatedCurrentMinute)
+          maxReleasedPressure(nextValve, updatedRemainingValves, updatedPressureReleasedSoFar, updatedRemainingMinutes)
         )
         possibleReleasedPressures.max
       else
         pressureReleasedSoFar
     // No need to open start valve: it always has rate 0
-    maxReleasedPressure(startValve, nonZeroRateValves, 0, 1)
+    maxReleasedPressure(startValve, nonZeroRateValves, 0, totalMinutes)
 
   val StartValveId = ValveId("AA")
   val TotalMoveNumber = 30
