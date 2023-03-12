@@ -4,6 +4,8 @@ import aoc2022.solutions.Day12.{Vertex, solutionPart2}
 import aoc2022.solutions.common.ParsingUtils.ParsingError
 
 import scala.collection.mutable.Map as MutableMap
+import scala.collection.mutable.Set as MutableSet
+import scala.collection.mutable.Queue as MutableQueue
 
 object Day16:
 
@@ -52,28 +54,33 @@ object Day16:
     distances.toMap
 
   def findGreatestPressure(startValve: Valve, valves: Seq[Valve], totalMinutes: Int): Int =
-    val nonZeroRateValves: Set[Valve] = valves.filter(_.rate > 0).toSet
+    val nonZeroRateValves: Set[Valve] = valves.filter(valve =>
+      valve.rate > 0 && valve != startValve
+    ).toSet
     val shortestPaths: Map[(ValveId, ValveId), Int] = findShortestPaths(valves)
-    def maxReleasedPressure(currentValve: Valve, remainingValvesToOpen: Set[Valve], pressureReleasedSoFar: Int, remainingMinutes: Int): Int =
-      if remainingMinutes > 0 && remainingValvesToOpen.nonEmpty then
-        val updatedPressureReleasedSoFar = if currentValve.rate > 0 then
-          pressureReleasedSoFar + currentValve.rate * (remainingMinutes - 1)
-        else
-          pressureReleasedSoFar
+
+    //TODO: The rate of nextValve is though always > 0?
+    def maxReleasedPressure(currentValve: Valve, remainingValvesToOpen: Set[Valve], pressureReleasedSoFar: Int, currentMinute: Int): Int =
+      if currentMinute < totalMinutes && remainingValvesToOpen.nonEmpty then
         val possibleReleasedPressures = remainingValvesToOpen.map(nextValve =>
-          val minutesToMove = shortestPaths.get((currentValve.id, nextValve.id)).getOrElse(Int.MaxValue)
-          val updatedRemainingMinutes =
-            if currentValve.rate > 0 then
-              remainingMinutes - 1 - minutesToMove
+          val minutesToMove = shortestPaths((currentValve.id, nextValve.id))
+          val updatedPressureReleasedSoFar = if nextValve.rate > 0 then
+            pressureReleasedSoFar + nextValve.rate * (totalMinutes - currentMinute - minutesToMove)
+          else
+            pressureReleasedSoFar
+          val updatedCurrentMinute =
+            if nextValve.rate > 0 then
+              currentMinute + 1 + minutesToMove
             else
-              remainingMinutes - minutesToMove
-          val updatedRemainingValves = remainingValvesToOpen.filter(_ != nextValve)
-          maxReleasedPressure(nextValve, updatedRemainingValves, updatedPressureReleasedSoFar, updatedRemainingMinutes)
+              currentMinute + minutesToMove
+          val updatedRemainingValves = remainingValvesToOpen - nextValve
+          maxReleasedPressure(nextValve, updatedRemainingValves, updatedPressureReleasedSoFar, updatedCurrentMinute)
         )
         possibleReleasedPressures.max
       else
         pressureReleasedSoFar
-    maxReleasedPressure(startValve, nonZeroRateValves, 0, totalMinutes)
+    // No need to open start valve: it always has rate 0
+    maxReleasedPressure(startValve, nonZeroRateValves, 0, 1)
 
   val StartValveId = ValveId("AA")
   val TotalMoveNumber = 30
